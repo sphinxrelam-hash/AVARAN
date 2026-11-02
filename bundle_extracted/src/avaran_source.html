@@ -1,0 +1,2250 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AVARAN — Orbital Intelligence &amp; Architectural Synthesis</title>
+
+  <!-- Google Fonts: Cinzel & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#050505',
+            graphite: '#111214',
+            iron: '#242528',
+            silver: '#C5C6CB',
+            mutedSilver: '#85868B',
+            starlight: '#F2F0EB',
+            secondaryText: '#A7A7AD',
+          },
+          fontFamily: {
+            cinzel: ['Cinzel', 'serif'],
+            inter: ['Inter', 'sans-serif'],
+          },
+          letterSpacing: {
+            ultra: '0.32em',
+            wideLux: '0.18em',
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Three.js, GSAP + ScrollTrigger, Lenis, Lucide -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.395.0/dist/umd/lucide.min.js"></script>
+
+  <style>
+    :root {
+      --obsidian: #050505;
+      --graphite: #111214;
+      --iron: #242528;
+      --silver: #C5C6CB;
+      --muted-silver: #85868B;
+      --starlight: #F2F0EB;
+      --secondary-text: #A7A7AD;
+      --mouse-x: 50vw;
+      --mouse-y: 50vh;
+    }
+
+    * {
+      box-sizing: border-box;
+      selection-background-color: #C5C6CB;
+      selection-color: #050505;
+    }
+
+    ::selection {
+      background: rgba(197, 198, 203, 0.28);
+      color: #F2F0EB;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #050505;
+      color: #F2F0EB;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Hide scrollbar for sleekness while keeping accessibility */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #050505;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #242528;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #85868B;
+    }
+
+    /* Silver metallic gradient text */
+    .silver-gradient-text {
+      background: linear-gradient(135deg, #F2F0EB 0%, #C5C6CB 45%, #85868B 80%, #F2F0EB 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmerText 8s ease-in-out infinite;
+    }
+
+    @keyframes shimmerText {
+      0%, 100% { background-position: 0% center; }
+      50% { background-position: 100% center; }
+    }
+
+    /* Ambient Mouse Light */
+    #ambient-mouse-light {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(
+        650px circle at var(--mouse-x) var(--mouse-y),
+        rgba(197, 198, 203, 0.065),
+        rgba(133, 134, 139, 0.02) 40%,
+        transparent 75%
+      );
+      transition: opacity 0.5s ease;
+    }
+
+    /* Subtle noise film grain */
+    .film-grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 40;
+      opacity: 0.032;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* Custom Desktop Cursor */
+    @media (pointer: fine) {
+      .custom-cursor-dot {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 6px;
+        height: 6px;
+        background: #F2F0EB;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 12px rgba(242, 240, 235, 0.9);
+      }
+      .custom-cursor-ring {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 38px;
+        height: 38px;
+        border: 1px solid rgba(197, 198, 203, 0.38);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9998;
+        transform: translate(-50%, -50%);
+        transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                    height 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                    border-color 0.28s ease,
+                    background-color 0.28s ease;
+      }
+      .custom-cursor-ring.cursor-expanded {
+        width: 64px;
+        height: 64px;
+        border-color: rgba(242, 240, 235, 0.75);
+        background-color: rgba(197, 198, 203, 0.08);
+      }
+    }
+
+    /* Glass & Metallic Surfaces */
+    .glass-panel {
+      background: linear-gradient(145deg, rgba(17, 18, 20, 0.78) 0%, rgba(5, 5, 5, 0.88) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(197, 198, 203, 0.12);
+    }
+
+    .silver-card {
+      position: relative;
+      background: linear-gradient(160deg, rgba(24, 25, 28, 0.65) 0%, rgba(10, 10, 12, 0.9) 100%);
+      border: 1px solid rgba(197, 198, 203, 0.14);
+      overflow: hidden;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-style: preserve-3d;
+    }
+
+    .silver-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        480px circle at var(--card-mouse-x, 50%) var(--card-mouse-y, 50%),
+        rgba(242, 240, 235, 0.13),
+        transparent 60%
+      );
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .silver-card:hover::before {
+      opacity: 1;
+    }
+
+    .silver-card:hover {
+      border-color: rgba(242, 240, 235, 0.38);
+      box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.85), 0 0 35px rgba(197, 198, 203, 0.09);
+    }
+
+    /* Animated navigation underline */
+    .nav-link {
+      position: relative;
+      color: #A7A7AD;
+      transition: color 0.3s ease;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: #F2F0EB;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -6px;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #F2F0EB, transparent);
+      transform: scaleX(0);
+      transform-origin: center;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-link:hover::after, .nav-link.active::after {
+      transform: scaleX(1);
+    }
+
+    /* Fine Geometric Alignment Lines */
+    .geo-crosshair {
+      position: relative;
+    }
+    .geo-crosshair::before, .geo-crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(197, 198, 203, 0.35);
+      pointer-events: none;
+    }
+
+    /* Word reveal masks */
+    .word-mask {
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: bottom;
+      padding-bottom: 0.08em;
+    }
+    .word-inner {
+      display: inline-block;
+      transform: translateY(110%);
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+
+    /* Logo blend for pure black background seamlessness */
+    .logo-blend {
+      mix-blend-mode: screen;
+      filter: contrast(1.15) brightness(1.05);
+    }
+
+    /* Pulse orbital rings */
+    @keyframes slowSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes slowSpinReverse {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+    .spin-slow {
+      animation: slowSpin 38s linear infinite;
+    }
+    .spin-slow-reverse {
+      animation: slowSpinReverse 52s linear infinite;
+    }
+
+    /* Sound wave bars */
+    .sound-bar {
+      width: 2px;
+      background-color: #C5C6CB;
+      transition: height 0.2s ease;
+    }
+    .sound-active .sound-bar-1 { animation: eqBar 0.9s ease-in-out infinite alternate; }
+    .sound-active .sound-bar-2 { animation: eqBar 0.65s ease-in-out infinite alternate 0.15s; }
+    .sound-active .sound-bar-3 { animation: eqBar 0.8s ease-in-out infinite alternate 0.3s; }
+    .sound-active .sound-bar-4 { animation: eqBar 0.55s ease-in-out infinite alternate 0.2s; }
+
+    @keyframes eqBar {
+      0% { height: 3px; }
+      100% { height: 14px; }
+    }
+
+    /* Reduced Motion Support */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .word-inner {
+        transform: none !important;
+        opacity: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-obsidian text-starlight antialiased selection:bg-silver/30 selection:text-starlight">
+
+  <!-- Top Scroll Progress Indicator -->
+  <div class="fixed top-0 left-0 right-0 h-[2px] z-[90] bg-iron/40 pointer-events-none">
+    <div id="scroll-progress-bar" class="h-full w-0 bg-gradient-to-r from-mutedSilver via-silver to-starlight shadow-[0_0_12px_#F2F0EB]"></div>
+  </div>
+
+  <!-- Right Side Vertical Orbital Scroll Telemetry -->
+  <div class="fixed right-5 top-1/2 -translate-y-1/2 z-40 hidden xl:flex flex-col items-center gap-3 pointer-events-none">
+    <span id="scroll-telemetry-pct" class="text-[10px] font-mono tracking-widest text-mutedSilver">00%</span>
+    <div class="w-[1px] h-28 bg-iron/70 relative overflow-hidden">
+      <div id="scroll-telemetry-thumb" class="w-full h-7 bg-silver absolute top-0 left-0 shadow-[0_0_8px_#F2F0EB]"></div>
+    </div>
+    <span class="text-[9px] tracking-ultra text-mutedSilver/60 uppercase [writing-mode:vertical-rl] rotate-180">ORBITAL SYNC</span>
+  </div>
+
+  <!-- Ambient Mouse Following Light & Film Grain -->
+  <div id="ambient-mouse-light" aria-hidden="true"></div>
+  <div class="film-grain" aria-hidden="true"></div>
+
+  <!-- Custom Desktop Cursor -->
+  <div id="cursor-dot" class="custom-cursor-dot hidden lg:block" aria-hidden="true"></div>
+  <div id="cursor-ring" class="custom-cursor-ring hidden lg:block" aria-hidden="true"></div>
+
+  <!-- Fixed Background 3D Canvas Stage (Evolves with Scroll) -->
+  <div id="webgl-stage-container" class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+    <canvas id="avaran-webgl-canvas" class="w-full h-full block"></canvas>
+    <!-- Fallback SVG Orbital Artwork if WebGL is unavailable -->
+    <div id="webgl-fallback" class="hidden absolute inset-0 items-center justify-center">
+      <img src="artifacts/file_generation/ttl=63d/intermediate/avaran_logo.webp" alt="AVARAN Orbital Fallback" class="w-96 h-96 object-contain logo-blend opacity-65" />
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. CINEMATIC LOADING ANIMATION OVERLAY     -->
+  <!-- ========================================== -->
+  <div id="preloader" role="dialog" aria-label="Entering AVARAN loading sequence" class="fixed inset-0 z-[100] bg-obsidian flex flex-col items-center justify-center overflow-hidden select-none">
+    <!-- Particle Convergence Canvas -->
+    <canvas id="preloader-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+    <!-- Central Orbital Assembly & Logo -->
+    <div class="relative z-10 flex flex-col items-center justify-center">
+      <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
+        <!-- Travelling Circular Light SVG -->
+        <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 260 260">
+          <!-- Outer faint astrolabe ring -->
+          <circle cx="130" cy="130" r="122" fill="none" stroke="rgba(197,198,203,0.12)" stroke-width="0.75" stroke-dasharray="3 6" />
+          <!-- Inner structure ring -->
+          <circle cx="130" cy="130" r="102" fill="none" stroke="rgba(197,198,203,0.15)" stroke-width="0.75" />
+          <!-- Traveling thin circular light -->
+          <circle id="preloader-light-ring" cx="130" cy="130" r="102" fill="none" stroke="url(#preloaderGrad)" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="640" stroke-dashoffset="640" />
+          <!-- Cardinal alignment nodes -->
+          <circle cx="130" cy="8" r="2.5" fill="#F2F0EB" class="opacity-60" />
+          <circle cx="130" cy="252" r="2" fill="#C5C6CB" class="opacity-40" />
+          <circle cx="8" cy="130" r="2" fill="#C5C6CB" class="opacity-40" />
+          <circle cx="252" cy="130" r="2" fill="#C5C6CB" class="opacity-40" />
+          <defs>
+            <linearGradient id="preloaderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#050505" stop-opacity="0" />
+              <stop offset="50%" stop-color="#C5C6CB" stop-opacity="0.8" />
+              <stop offset="100%" stop-color="#F2F0EB" stop-opacity="1" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <!-- Materializing AVARAN Logo -->
+        <div id="preloader-logo-wrap" class="relative w-44 h-44 rounded-full flex items-center justify-center opacity-0 scale-75">
+          <div class="absolute inset-0 rounded-full bg-silver/10 blur-2xl"></div>
+          <img src="artifacts/file_generation/ttl=63d/intermediate/avaran_logo.webp" alt="AVARAN Emblem" class="w-40 h-40 object-contain logo-blend relative z-10" />
+        </div>
+      </div>
+
+      <!-- Status & Entering Text -->
+      <div class="mt-8 text-center">
+        <p id="preloader-status" class="font-cinzel text-xs sm:text-sm tracking-[0.38em] text-starlight opacity-0 translate-y-3">
+          ENTERING AVARAN
+        </p>
+        <div class="mt-3 flex items-center justify-center gap-3 text-[10px] font-mono tracking-widest text-mutedSilver">
+          <span id="preloader-stage-label">INITIALIZING ORBITAL PARTICLES</span>
+          <span class="text-silver" id="preloader-counter">00%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skip Intro Button for Accessibility & Impatient Visitors -->
+    <button id="skip-preloader-btn" type="button" class="absolute bottom-8 right-8 z-20 px-4 py-2 rounded-full border border-silver/20 bg-graphite/60 text-[11px] tracking-widest uppercase text-secondaryText hover:text-starlight hover:border-silver/50 transition-all">
+      Skip Sequence →
+    </button>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. ANIMATED FLOATING NAVIGATION BAR        -->
+  <!-- ========================================== -->
+  <header id="main-navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 py-5 px-4 sm:px-8 lg:px-14">
+    <div id="navbar-inner" class="max-w-7xl mx-auto rounded-full px-5 sm:px-7 py-3 transition-all duration-500 flex items-center justify-between border border-transparent">
+      
+      <!-- Brand Identity (Left) -->
+      <a href="#home" data-scroll-to="#home" class="flex items-center gap-3.5 group focus:outline-none">
+        <div class="relative w-10 h-10 rounded-full border border-silver/25 bg-obsidian flex items-center justify-center overflow-hidden group-hover:border-starlight/70 transition-colors">
+          <img src="artifacts/file_generation/ttl=63d/intermediate/avaran_logo.webp" alt="AVARAN Logo" class="w-9 h-9 object-contain logo-blend group-hover:scale-110 transition-transform duration-500" />
+        </div>
+        <div class="flex flex-col">
+          <span class="font-cinzel text-lg sm:text-xl tracking-[0.26em] text-starlight font-medium leading-none">AVARAN</span>
+          <span class="text-[9px] tracking-[0.28em] text-mutedSilver uppercase mt-1">ORBITAL NEXUS</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Links (Center) -->
+      <nav aria-label="Primary Navigation" class="hidden md:flex items-center gap-8 lg:gap-10 text-xs tracking-[0.18em] uppercase font-medium">
+        <a href="#home" data-scroll-to="#home" class="nav-link active">Home</a>
+        <a href="#explore" data-scroll-to="#explore" class="nav-link">Explore</a>
+        <a href="#features" data-scroll-to="#features" class="nav-link">Features</a>
+        <a href="#about" data-scroll-to="#about" class="nav-link">About</a>
+        <a href="#contact" data-scroll-to="#contact" class="nav-link">Contact</a>
+      </nav>
+
+      <!-- Right Controls: Sound Toggle + Get Started CTA + Mobile Hamburger -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <!-- Ambient Sound Synthesizer Toggle (Disabled by default) -->
+        <button id="sound-toggle-btn" type="button" aria-pressed="false" aria-label="Toggle Ambient Soundscape" title="Toggle Ambient Soundscape" class="magnetic-btn flex items-center gap-2.5 px-3.5 py-2 rounded-full border border-silver/20 bg-graphite/70 hover:border-silver/50 text-[11px] tracking-widest uppercase text-secondaryText hover:text-starlight transition-all">
+          <div id="sound-bars-wrap" class="flex items-end gap-[2px] h-3.5">
+            <span class="sound-bar sound-bar-1 h-1"></span>
+            <span class="sound-bar sound-bar-2 h-1.5"></span>
+            <span class="sound-bar sound-bar-3 h-1"></span>
+            <span class="sound-bar sound-bar-4 h-1"></span>
+          </div>
+          <span id="sound-status-text" class="hidden sm:inline text-[10px]">Audio Off</span>
+        </button>
+
+        <!-- Get Started Magnetic Button -->
+        <button id="nav-get-started-btn" type="button" class="magnetic-btn hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-starlight via-silver to-starlight text-obsidian font-medium text-xs tracking-[0.16em] uppercase shadow-[0_0_25px_rgba(197,198,203,0.25)] hover:shadow-[0_0_35px_rgba(242,240,235,0.5)] transition-all">
+          <span>Get Started</span>
+          <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+        </button>
+
+        <!-- Mobile Menu Trigger -->
+        <button id="mobile-menu-open-btn" type="button" aria-label="Open navigation menu" aria-expanded="false" class="md:hidden w-10 h-10 rounded-full border border-silver/25 bg-graphite/80 flex items-center justify-center text-starlight hover:border-starlight transition-colors">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Animated Fullscreen Drawer -->
+  <div id="mobile-drawer" role="dialog" aria-label="Mobile Navigation" class="fixed inset-0 z-[80] bg-obsidian/95 backdrop-blur-2xl pointer-events-none opacity-0 transition-opacity duration-500 flex flex-col justify-between p-8">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="artifacts/file_generation/ttl=63d/intermediate/avaran_logo.webp" alt="AVARAN" class="w-9 h-9 object-contain logo-blend" />
+        <span class="font-cinzel text-lg tracking-[0.26em] text-starlight">AVARAN</span>
+      </div>
+      <button id="mobile-menu-close-btn" type="button" aria-label="Close navigation menu" class="w-10 h-10 rounded-full border border-silver/25 flex items-center justify-center text-starlight hover:border-starlight">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <nav class="flex flex-col gap-6 my-auto">
+      <a href="#home" data-mobile-link="#home" class="font-cinzel text-3xl tracking-[0.18em] text-starlight hover:text-silver transition-colors">01. Home</a>
+      <a href="#about" data-mobile-link="#about" class="font-cinzel text-3xl tracking-[0.18em] text-starlight hover:text-silver transition-colors">02. Philosophy</a>
+      <a href="#explore" data-mobile-link="#explore" class="font-cinzel text-3xl tracking-[0.18em] text-starlight hover:text-silver transition-colors">03. Explore</a>
+      <a href="#experience" data-mobile-link="#experience" class="font-cinzel text-3xl tracking-[0.18em] text-starlight hover:text-silver transition-colors">04. Experience</a>
+      <a href="#features" data-mobile-link="#features" class="font-cinzel text-3xl tracking-[0.18em] text-starlight hover:text-silver transition-colors">05. Features</a>
+      <a href="#contact" data-mobile-link="#contact" class="font-cinzel text-3xl tracking-[0.18em] text-starlight hover:text-silver transition-colors">06. Contact</a>
+    </nav>
+
+    <div class="pt-6 border-t border-iron flex items-center justify-between">
+      <span class="text-xs tracking-widest uppercase text-mutedSilver">SYS // AVARAN 4.2</span>
+      <button id="mobile-get-started-btn" type="button" class="px-6 py-2.5 rounded-full bg-starlight text-obsidian text-xs font-medium tracking-widest uppercase">
+        Get Started
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MAIN CONTENT STREAM                        -->
+  <!-- ========================================== -->
+  <main class="relative z-10">
+
+    <!-- ========================================== -->
+    <!-- 4. HERO SECTION — THE CENTERPIECE          -->
+    <!-- ========================================== -->
+    <section id="home" class="relative min-h-screen w-full flex items-center pt-28 pb-16 px-4 sm:px-8 lg:px-14 overflow-hidden">
+      <!-- Subtle Hero Architectural Coordinate Grid -->
+      <div class="absolute inset-0 pointer-events-none opacity-25">
+        <div class="max-w-7xl mx-auto h-full border-x border-silver/10 relative">
+          <div class="absolute top-1/4 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-silver/15 to-transparent"></div>
+          <div class="absolute bottom-20 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-silver/15 to-transparent"></div>
+        </div>
+      </div>
+
+      <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center relative z-10">
+        
+        <!-- Left Column: Typography & Interactive CTAs -->
+        <div class="lg:col-span-7 flex flex-col items-start text-left">
+          <!-- Eyebrow Badge -->
+          <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-silver/20 bg-graphite/70 backdrop-blur-md mb-7">
+            <span class="w-1.5 h-1.5 rounded-full bg-starlight animate-ping"></span>
+            <span class="text-[11px] font-medium tracking-[0.32em] uppercase text-silver">BUILD · ANALYZE · GROW</span>
+          </div>
+
+          <!-- Main Heading with Word Reveal & Silver Gradient Highlight -->
+          <h1 id="hero-heading" class="font-cinzel text-4xl sm:text-6xl xl:text-[4.35rem] leading-[1.08] tracking-tight font-normal text-starlight mb-7">
+            <span class="word-mask"><span class="word-inner">Turn</span></span>
+            <span class="word-mask"><span class="word-inner">Your</span></span>
+            <span class="word-mask"><span class="word-inner silver-gradient-text font-semibold">Ideas</span></span>
+            <span class="word-mask"><span class="word-inner">Into</span></span>
+            <span class="word-mask"><span class="word-inner silver-gradient-text font-semibold">Real</span></span>
+            <span class="word-mask"><span class="word-inner silver-gradient-text font-semibold">Solutions</span></span>
+          </h1>
+
+          <!-- Supporting Description -->
+          <p id="hero-description" class="text-secondaryText text-base sm:text-lg leading-relaxed max-w-xl font-light mb-10 opacity-0 translate-y-4">
+            Enter a living architectural intelligence where sovereign data streams, predictive computation, and autonomous design converge into a singular orbital ecosystem.
+          </p>
+
+          <!-- Two Magnetic CTAs -->
+          <div id="hero-cta-group" class="flex flex-wrap items-center gap-4 sm:gap-5 opacity-0 translate-y-4">
+            <button id="hero-explore-btn" type="button" data-scroll-to="#explore" class="magnetic-btn group relative inline-flex items-center gap-3 px-8 py-4 rounded-full bg-starlight text-obsidian font-medium text-xs sm:text-sm tracking-[0.2em] uppercase overflow-hidden shadow-[0_0_40px_rgba(242,240,235,0.28)] hover:shadow-[0_0_55px_rgba(242,240,235,0.55)] transition-all">
+              <span class="relative z-10">Explore AVARAN</span>
+              <i data-lucide="compass" class="w-4 h-4 relative z-10 group-hover:rotate-45 transition-transform duration-500"></i>
+            </button>
+
+            <button id="hero-discover-btn" type="button" data-scroll-to="#about" class="magnetic-btn group inline-flex items-center gap-3 px-8 py-4 rounded-full border border-silver/30 bg-graphite/60 hover:bg-iron/70 hover:border-starlight/60 text-starlight font-medium text-xs sm:text-sm tracking-[0.2em] uppercase backdrop-blur-md transition-all">
+              <span>Discover More</span>
+              <i data-lucide="arrow-down-right" class="w-4 h-4 text-silver group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-transform"></i>
+            </button>
+          </div>
+
+          <!-- Fine Geometric Telemetry Strip -->
+          <div class="mt-14 pt-8 border-t border-silver/15 w-full max-w-xl grid grid-cols-3 gap-6">
+            <div>
+              <div class="text-[10px] font-mono tracking-widest uppercase text-mutedSilver">LATENCY CORE</div>
+              <div class="font-cinzel text-xl sm:text-2xl text-starlight mt-1">0.04 <span class="text-xs text-silver">ms</span></div>
+            </div>
+            <div>
+              <div class="text-[10px] font-mono tracking-widest uppercase text-mutedSilver">ORBITAL NODES</div>
+              <div class="font-cinzel text-xl sm:text-2xl text-starlight mt-1">12,840</div>
+            </div>
+            <div>
+              <div class="text-[10px] font-mono tracking-widest uppercase text-mutedSilver">INTEGRITY</div>
+              <div class="font-cinzel text-xl sm:text-2xl text-starlight mt-1">99.998<span class="text-xs text-silver">%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Interactive 3D Orbital Sculpture Stage & Alignment HUD -->
+        <div class="lg:col-span-5 relative flex items-center justify-center min-h-[420px] sm:min-h-[520px]">
+          <!-- Interactive Hover Sensor Zone for the 3D Sculpture -->
+          <div id="hero-sculpture-hitbox" role="region" aria-label="Interactive 3D AVARAN Orbital Sculpture" tabindex="0" class="relative w-full max-w-[490px] aspect-square flex items-center justify-center cursor-grab active:cursor-grabbing group focus:outline-none">
+            
+            <!-- Fine Geometric Alignment Lines & Orbital Points matching the attached AVARAN logo -->
+            <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 500 500">
+              <!-- Vertical Meridian Line -->
+              <line x1="250" y1="0" x2="250" y2="500" stroke="rgba(197,198,203,0.22)" stroke-width="0.75" />
+              <!-- Horizontal Equatorial Line -->
+              <line x1="20" y1="265" x2="480" y2="265" stroke="rgba(197,198,203,0.16)" stroke-width="0.75" stroke-dasharray="2 5" />
+              <!-- Top Astrolabe Target Node (Directly inspired by logo top circle) -->
+              <circle cx="250" cy="48" r="14" fill="none" stroke="rgba(242,240,235,0.45)" stroke-width="1" />
+              <circle cx="250" cy="48" r="3" fill="#F2F0EB" />
+              <circle cx="250" cy="82" r="2" fill="#C5C6CB" />
+              <!-- Outer Fine Geometric Ring -->
+              <circle cx="250" cy="250" r="202" fill="none" stroke="rgba(197,198,203,0.22)" stroke-width="0.85" />
+              <!-- Rotating Dashed Orbital Ring -->
+              <circle cx="250" cy="250" r="222" fill="none" stroke="rgba(197,198,203,0.15)" stroke-width="0.75" stroke-dasharray="6 10" class="origin-center spin-slow" />
+              <!-- Left & Right Orbital Points -->
+              <circle cx="48" cy="265" r="2.5" fill="#F2F0EB" />
+              <circle cx="452" cy="265" r="2.5" fill="#F2F0EB" />
+              <!-- Vertical Drop Plumb Lines (like bottom of AVARAN logo) -->
+              <line x1="185" y1="420" x2="185" y2="495" stroke="rgba(197,198,203,0.25)" stroke-width="0.75" />
+              <circle cx="185" cy="420" r="2" fill="#C5C6CB" />
+              <line x1="355" y1="395" x2="355" y2="490" stroke="rgba(197,198,203,0.25)" stroke-width="0.75" />
+              <circle cx="355" cy="395" r="2" fill="#C5C6CB" />
+            </svg>
+
+            <!-- Subtle Center Emblem Aura -->
+            <div id="sculpture-aura" class="w-64 h-64 rounded-full bg-silver/10 blur-3xl transition-all duration-700 group-hover:bg-starlight/25 group-hover:scale-125 pointer-events-none"></div>
+
+            <!-- Interactive Floating HUD Badge (Bottom Right of Sculpture) -->
+            <div class="absolute bottom-3 right-3 px-3.5 py-2 rounded-xl glass-panel flex items-center gap-2.5 text-[10px] font-mono tracking-widest text-silver">
+              <span id="sculpture-lum-dot" class="w-2 h-2 rounded-full bg-silver transition-colors"></span>
+              <span id="sculpture-hud-state">ORBITAL FIELD // INTERACTIVE</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Scroll Invitation -->
+      <a href="#about" data-scroll-to="#about" class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-mutedSilver hover:text-starlight transition-colors group">
+        <span class="text-[10px] tracking-[0.34em] uppercase">Scroll to Traverse</span>
+        <div class="w-[1px] h-9 bg-iron overflow-hidden relative">
+          <div class="w-full h-1/2 bg-starlight animate-bounce"></div>
+        </div>
+      </a>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 6.1 SECTION 1: OUR PHILOSOPHY              -->
+    <!-- ========================================== -->
+    <section id="about" class="relative min-h-screen w-full flex items-center justify-center py-32 px-4 sm:px-8 lg:px-14 overflow-hidden">
+      <!-- Interactive Moving Geometric Lines Canvas in Background -->
+      <canvas id="philosophy-geo-canvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-55"></canvas>
+
+      <div class="max-w-5xl mx-auto w-full text-center relative z-10">
+        <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-silver/20 bg-graphite/80 mb-8 reveal-up">
+          <span class="text-[10px] font-mono tracking-[0.3em] uppercase text-silver">01 // OUR PHILOSOPHY</span>
+        </div>
+
+        <h2 class="font-cinzel text-4xl sm:text-6xl lg:text-7xl tracking-tight text-starlight leading-[1.12] mb-10 reveal-up">
+          Beyond What You <span class="silver-gradient-text italic font-medium">Imagine.</span>
+        </h2>
+
+        <p class="text-secondaryText text-lg sm:text-2xl font-light leading-relaxed max-w-3xl mx-auto mb-16 reveal-up">
+          True technological mastery does not announce itself with noise. Like celestial mechanics, AVARAN operates with silent, mathematical inevitability—transforming fragmented complexity into translucent harmonic order.
+        </p>
+
+        <!-- Interactive Philosophy Pillars (3 Architectural Tenets) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left reveal-up">
+          <div class="p-7 rounded-2xl glass-panel hover:border-silver/40 transition-all group">
+            <div class="flex items-center justify-between mb-5">
+              <span class="text-[11px] font-mono tracking-widest text-mutedSilver">AXIOM I</span>
+              <i data-lucide="orbit" class="w-4 h-4 text-silver group-hover:rotate-90 transition-transform duration-500"></i>
+            </div>
+            <h3 class="font-cinzel text-lg tracking-wider text-starlight mb-2.5">Zero-Entropy Design</h3>
+            <p class="text-sm text-secondaryText font-light leading-relaxed">
+              Every interface vector and computation cycle is stripped of friction, leaving pure structural clarity.
+            </p>
+          </div>
+
+          <div class="p-7 rounded-2xl glass-panel hover:border-silver/40 transition-all group">
+            <div class="flex items-center justify-between mb-5">
+              <span class="text-[11px] font-mono tracking-widest text-mutedSilver">AXIOM II</span>
+              <i data-lucide="sparkles" class="w-4 h-4 text-silver group-hover:scale-125 transition-transform duration-500"></i>
+            </div>
+            <h3 class="font-cinzel text-lg tracking-wider text-starlight mb-2.5">Living Spatial Depth</h3>
+            <p class="text-sm text-secondaryText font-light leading-relaxed">
+              Information is not flat. AVARAN organizes multi-dimensional telemetry along intuitive orbital planes.
+            </p>
+          </div>
+
+          <div class="p-7 rounded-2xl glass-panel hover:border-silver/40 transition-all group">
+            <div class="flex items-center justify-between mb-5">
+              <span class="text-[11px] font-mono tracking-widest text-mutedSilver">AXIOM III</span>
+              <i data-lucide="infinity" class="w-4 h-4 text-silver group-hover:rotate-180 transition-transform duration-700"></i>
+            </div>
+            <h3 class="font-cinzel text-lg tracking-wider text-starlight mb-2.5">Autonomous Evolution</h3>
+            <p class="text-sm text-secondaryText font-light leading-relaxed">
+              Neural pathways continuously recalibrate around your workflow, anticipating structural bottlenecks before they emerge.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 6.2 SECTION 2: EXPLORE POSSIBILITIES       -->
+    <!-- ========================================== -->
+    <section id="explore" class="relative py-32 px-4 sm:px-8 lg:px-14">
+      <div class="max-w-7xl mx-auto">
+        
+        <!-- Section Header -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+          <div>
+            <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-silver/20 bg-graphite/80 mb-5 reveal-up">
+              <span class="text-[10px] font-mono tracking-[0.3em] uppercase text-silver">02 // EXPLORE POSSIBILITIES</span>
+            </div>
+            <h2 class="font-cinzel text-3xl sm:text-5xl lg:text-6xl text-starlight tracking-tight reveal-up">
+              Architectures of the <span class="silver-gradient-text">Unseen</span>
+            </h2>
+          </div>
+
+          <!-- Interactive Domain Filter Pills -->
+          <div class="flex flex-wrap items-center gap-2 reveal-up" role="tablist" aria-label="Filter Domains">
+            <button type="button" data-domain-filter="all" class="domain-filter-btn active px-4 py-2 rounded-full text-xs tracking-widest uppercase border border-starlight bg-starlight text-obsidian font-medium transition-all">
+              All Systems
+            </button>
+            <button type="button" data-domain-filter="neural" class="domain-filter-btn px-4 py-2 rounded-full text-xs tracking-widest uppercase border border-silver/20 bg-graphite/60 text-secondaryText hover:text-starlight transition-all">
+              Neural Core
+            </button>
+            <button type="button" data-domain-filter="spatial" class="domain-filter-btn px-4 py-2 rounded-full text-xs tracking-widest uppercase border border-silver/20 bg-graphite/60 text-secondaryText hover:text-starlight transition-all">
+              Spatial Grid
+            </button>
+            <button type="button" data-domain-filter="kinetic" class="domain-filter-btn px-4 py-2 rounded-full text-xs tracking-widest uppercase border border-silver/20 bg-graphite/60 text-secondaryText hover:text-starlight transition-all">
+              Kinetic Flow
+            </button>
+          </div>
+        </div>
+
+        <!-- Three 3D Tilt Interactive Cards -->
+        <div id="explore-cards-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- Card 1 -->
+          <article data-domain="neural" class="tilt-card silver-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between group cursor-pointer reveal-up" data-modal-id="orbital-synthesis">
+            <div>
+              <!-- Image Container with Smooth Zoom & Overlay -->
+              <div class="relative h-60 w-full rounded-2xl overflow-hidden mb-7 border border-silver/15 bg-obsidian">
+                <img src="artifacts/file_generation/ttl=63d/intermediate/card_orbital.webp" alt="Cognitive Orbital Synthesis" class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out" />
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-transparent opacity-80"></div>
+                <div class="absolute top-4 left-4 px-3 py-1 rounded-full glass-panel text-[10px] font-mono tracking-widest text-silver uppercase">
+                  SYS // 01.A
+                </div>
+                <div class="absolute top-4 right-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-starlight group-hover:rotate-45 group-hover:bg-starlight group-hover:text-obsidian transition-all duration-500">
+                  <i data-lucide="cpu" class="w-4 h-4"></i>
+                </div>
+              </div>
+
+              <div class="text-[11px] font-mono tracking-[0.25em] uppercase text-mutedSilver mb-2">NEURAL TOPOLOGY</div>
+              <h3 class="font-cinzel text-2xl text-starlight mb-3 group-hover:text-silver transition-colors">
+                Cognitive Orbital Synthesis
+              </h3>
+              <p class="text-sm text-secondaryText font-light leading-relaxed mb-6">
+                Bind disparate enterprise models into a self-balancing orbital mesh capable of real-time reasoning across billions of live vectors.
+              </p>
+            </div>
+
+            <div class="pt-5 border-t border-silver/10 flex items-center justify-between">
+              <span class="text-xs font-mono text-silver">THROUGHPUT: 1.4 PB/S</span>
+              <span class="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-starlight group-hover:translate-x-1 transition-transform">
+                Inspect <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </span>
+            </div>
+          </article>
+
+          <!-- Card 2 -->
+          <article data-domain="spatial" class="tilt-card silver-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between group cursor-pointer reveal-up" data-modal-id="quantum-telemetry">
+            <div>
+              <div class="relative h-60 w-full rounded-2xl overflow-hidden mb-7 border border-silver/15 bg-obsidian">
+                <img src="artifacts/file_generation/ttl=63d/intermediate/card_grid.webp" alt="Astrolabe Spatial Telemetry" class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out" />
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-transparent opacity-80"></div>
+                <div class="absolute top-4 left-4 px-3 py-1 rounded-full glass-panel text-[10px] font-mono tracking-widest text-silver uppercase">
+                  SYS // 02.B
+                </div>
+                <div class="absolute top-4 right-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-starlight group-hover:rotate-45 group-hover:bg-starlight group-hover:text-obsidian transition-all duration-500">
+                  <i data-lucide="layers" class="w-4 h-4"></i>
+                </div>
+              </div>
+
+              <div class="text-[11px] font-mono tracking-[0.25em] uppercase text-mutedSilver mb-2">DIMENSIONAL MATRIX</div>
+              <h3 class="font-cinzel text-2xl text-starlight mb-3 group-hover:text-silver transition-colors">
+                Astrolabe Spatial Telemetry
+              </h3>
+              <p class="text-sm text-secondaryText font-light leading-relaxed mb-6">
+                Navigate high-density infrastructure through translucent glass planes that isolate anomalies with sub-millimeter precision.
+              </p>
+            </div>
+
+            <div class="pt-5 border-t border-silver/10 flex items-center justify-between">
+              <span class="text-xs font-mono text-silver">PRECISION: 99.999%</span>
+              <span class="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-starlight group-hover:translate-x-1 transition-transform">
+                Inspect <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </span>
+            </div>
+          </article>
+
+          <!-- Card 3 -->
+          <article data-domain="kinetic" class="tilt-card silver-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between group cursor-pointer reveal-up" data-modal-id="kinetic-morphogenesis">
+            <div>
+              <div class="relative h-60 w-full rounded-2xl overflow-hidden mb-7 border border-silver/15 bg-obsidian">
+                <img src="artifacts/file_generation/ttl=63d/intermediate/card_wave.webp" alt="Kinetic Continuum Engine" class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out" />
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-transparent opacity-80"></div>
+                <div class="absolute top-4 left-4 px-3 py-1 rounded-full glass-panel text-[10px] font-mono tracking-widest text-silver uppercase">
+                  SYS // 03.C
+                </div>
+                <div class="absolute top-4 right-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-starlight group-hover:rotate-45 group-hover:bg-starlight group-hover:text-obsidian transition-all duration-500">
+                  <i data-lucide="activity" class="w-4 h-4"></i>
+                </div>
+              </div>
+
+              <div class="text-[11px] font-mono tracking-[0.25em] uppercase text-mutedSilver mb-2">FLUID COMPUTATION</div>
+              <h3 class="font-cinzel text-2xl text-starlight mb-3 group-hover:text-silver transition-colors">
+                Kinetic Continuum Engine
+              </h3>
+              <p class="text-sm text-secondaryText font-light leading-relaxed mb-6">
+                Deploy liquid-mercury execution pipelines that dynamically re-route compute bandwidth across global nodes in zero-downtime waves.
+              </p>
+            </div>
+
+            <div class="pt-5 border-t border-silver/10 flex items-center justify-between">
+              <span class="text-xs font-mono text-silver">SCALE: ELASTIC ∞</span>
+              <span class="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-starlight group-hover:translate-x-1 transition-transform">
+                Inspect <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </span>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 6.3 SECTION 3: THE AVARAN EXPERIENCE       -->
+    <!-- ========================================== -->
+    <section id="experience" class="relative min-h-screen w-full py-32 px-4 sm:px-8 lg:px-14 flex items-center overflow-hidden">
+      <!-- Layered Depth Astrolabe SVG Backdrop -->
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
+        <svg class="w-[780px] h-[780px] max-w-[95vw] max-h-[95vw]" viewBox="0 0 800 800">
+          <circle id="exp-ring-outer" cx="400" cy="400" r="360" fill="none" stroke="rgba(197,198,203,0.2)" stroke-width="1" stroke-dasharray="4 12" />
+          <circle id="exp-ring-mid" cx="400" cy="400" r="275" fill="none" stroke="rgba(242,240,235,0.24)" stroke-width="0.8" />
+          <circle id="exp-ring-inner" cx="400" cy="400" r="190" fill="none" stroke="rgba(197,198,203,0.3)" stroke-width="1.2" stroke-dasharray="18 8" />
+          <line x1="400" y1="20" x2="400" y2="780" stroke="rgba(197,198,203,0.12)" stroke-width="1" />
+          <line x1="20" y1="400" x2="780" y2="400" stroke="rgba(197,198,203,0.12)" stroke-width="1" />
+        </svg>
+      </div>
+
+      <div class="max-w-7xl mx-auto w-full relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          
+          <!-- Left Narrative & Telemetry -->
+          <div class="lg:col-span-5 space-y-6">
+            <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-silver/20 bg-graphite/80 reveal-up">
+              <span class="text-[10px] font-mono tracking-[0.3em] uppercase text-silver">03 // THE AVARAN EXPERIENCE</span>
+            </div>
+
+            <h2 class="font-cinzel text-3xl sm:text-5xl text-starlight leading-[1.15] reveal-up">
+              A Living <span class="silver-gradient-text">Orbital Sculpture</span> at Your Command
+            </h2>
+
+            <p class="text-secondaryText text-base font-light leading-relaxed reveal-up">
+              Interact directly with the AVARAN harmonic core. Adjust orbital resonance modes below to observe real-time changes in ribbon velocity, ring inclination, and particle luminosity.
+            </p>
+
+            <!-- Interactive Orbital Mode Selector Controls -->
+            <div class="pt-4 space-y-4 reveal-up">
+              <div class="text-[11px] font-mono tracking-widest uppercase text-mutedSilver">SELECT HARMONIC STATE</div>
+              <div class="grid grid-cols-3 gap-3">
+                <button type="button" data-orbit-mode="equilibrium" class="orbit-mode-btn active p-3.5 rounded-2xl border border-starlight bg-starlight/10 text-left transition-all">
+                  <div class="text-[10px] font-mono text-silver">MODE 01</div>
+                  <div class="font-cinzel text-sm text-starlight mt-1">Equilibrium</div>
+                </button>
+                <button type="button" data-orbit-mode="singularity" class="orbit-mode-btn p-3.5 rounded-2xl border border-silver/20 bg-graphite/70 hover:border-silver/50 text-left transition-all">
+                  <div class="text-[10px] font-mono text-mutedSilver">MODE 02</div>
+                  <div class="font-cinzel text-sm text-starlight mt-1">Singularity</div>
+                </button>
+                <button type="button" data-orbit-mode="supernova" class="orbit-mode-btn p-3.5 rounded-2xl border border-silver/20 bg-graphite/70 hover:border-silver/50 text-left transition-all">
+                  <div class="text-[10px] font-mono text-mutedSilver">MODE 03</div>
+                  <div class="font-cinzel text-sm text-starlight mt-1">Hyper-Flux</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Interactive Sliders for 3D Sculpture Manipulation -->
+            <div class="p-6 rounded-2xl glass-panel space-y-5 reveal-up">
+              <div>
+                <div class="flex justify-between text-xs font-mono mb-2">
+                  <span class="text-mutedSilver">RIBBON ANGULAR VELOCITY</span>
+                  <span id="velocity-val" class="text-starlight">1.0x</span>
+                </div>
+                <input id="sculpture-speed-slider" type="range" min="0.2" max="3.5" step="0.1" value="1.0" aria-label="Ribbon Angular Velocity" class="w-full accent-starlight bg-iron h-1 rounded-lg cursor-pointer" />
+              </div>
+              <div>
+                <div class="flex justify-between text-xs font-mono mb-2">
+                  <span class="text-mutedSilver">ORBITAL RING EXPANSION</span>
+                  <span id="expansion-val" class="text-starlight">100%</span>
+                </div>
+                <input id="sculpture-scale-slider" type="range" min="70" max="145" step="1" value="100" aria-label="Orbital Ring Expansion" class="w-full accent-starlight bg-iron h-1 rounded-lg cursor-pointer" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Center/Right Interactive Sculpture Viewport Frame -->
+          <div class="lg:col-span-7 flex flex-col items-center justify-center relative min-h-[440px] sm:min-h-[540px]">
+            <div class="relative w-full max-w-[540px] aspect-square rounded-full border border-silver/15 flex items-center justify-center p-8">
+              <!-- Corner Coordinate Brackets -->
+              <div class="absolute top-4 left-4 w-6 h-6 border-t border-l border-silver/40"></div>
+              <div class="absolute top-4 right-4 w-6 h-6 border-t border-r border-silver/40"></div>
+              <div class="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-silver/40"></div>
+              <div class="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-silver/40"></div>
+
+              <!-- Central Reference Emblem with Parallax Layers -->
+              <div id="experience-centerpiece" class="relative w-72 h-72 sm:w-80 sm:h-80 rounded-full flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border border-silver/25 spin-slow"></div>
+                <div class="absolute inset-4 rounded-full border border-dashed border-silver/20 spin-slow-reverse"></div>
+                <img src="artifacts/file_generation/ttl=63d/intermediate/avaran_logo.webp" alt="AVARAN Core Sculpture" class="w-56 h-56 sm:w-64 sm:h-64 object-contain logo-blend opacity-80 pointer-events-none" />
+              </div>
+
+              <!-- Floating Layered Telemetry Callouts -->
+              <div class="absolute top-10 left-2 sm:left-6 px-4 py-2.5 rounded-xl glass-panel text-left">
+                <div class="text-[9px] font-mono tracking-widest text-mutedSilver">INCLINATION</div>
+                <div id="telemetry-inclination" class="font-cinzel text-sm text-starlight">23.44° N // LOCKED</div>
+              </div>
+
+              <div class="absolute bottom-12 right-2 sm:right-6 px-4 py-2.5 rounded-xl glass-panel text-left">
+                <div class="text-[9px] font-mono tracking-widest text-mutedSilver">LUMINOSITY FLUX</div>
+                <div id="telemetry-flux" class="font-cinzel text-sm text-starlight">98.4 LUM // NOMINAL</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 6.4 SECTION 4: FEATURES (4 PREMIUM CARDS)  -->
+    <!-- ========================================== -->
+    <section id="features" class="relative py-32 px-4 sm:px-8 lg:px-14">
+      <div class="max-w-7xl mx-auto">
+        
+        <div class="text-center max-w-3xl mx-auto mb-20">
+          <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-silver/20 bg-graphite/80 mb-5 reveal-up">
+            <span class="text-[10px] font-mono tracking-[0.3em] uppercase text-silver">04 // ARCHITECTURAL CAPABILITIES</span>
+          </div>
+          <h2 class="font-cinzel text-3xl sm:text-5xl lg:text-6xl text-starlight tracking-tight mb-5 reveal-up">
+            Engineered for <span class="silver-gradient-text">Sovereign Scale</span>
+          </h2>
+          <p class="text-secondaryText text-base sm:text-lg font-light reveal-up">
+            Four foundational pillars designed to sustain mission-critical intelligence across global teams.
+          </p>
+        </div>
+
+        <!-- Four Premium Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-7">
+          
+          <!-- Feature 1: Powerful Analytics -->
+          <div class="silver-card rounded-3xl p-8 sm:p-10 group reveal-up" data-feature-card="analytics">
+            <div class="flex items-start justify-between mb-8">
+              <div class="w-14 h-14 rounded-2xl border border-silver/25 bg-obsidian/90 flex items-center justify-center text-starlight group-hover:border-starlight group-hover:scale-105 transition-all">
+                <i data-lucide="bar-chart-2" class="w-6 h-6 stroke-[1.5]"></i>
+              </div>
+              <span class="text-[11px] font-mono tracking-widest text-mutedSilver">01 // ANALYTICS</span>
+            </div>
+
+            <h3 class="font-cinzel text-2xl sm:text-3xl text-starlight mb-4">Powerful Analytics</h3>
+            <p class="text-secondaryText font-light leading-relaxed mb-8">
+              Real-time multi-dimensional telemetry distills petabytes of operational noise into crystalline predictive trajectories and sub-second anomaly detection.
+            </p>
+
+            <!-- Live Animated Micro Sparkline Graphic -->
+            <div class="p-4 rounded-2xl bg-obsidian/70 border border-silver/10 flex items-center justify-between">
+              <div>
+                <div class="text-[10px] font-mono text-mutedSilver uppercase">PREDICTIVE CONFIDENCE</div>
+                <div class="font-cinzel text-lg text-starlight mt-0.5">99.42%</div>
+              </div>
+              <svg class="w-36 h-10 overflow-visible" viewBox="0 0 140 36">
+                <path d="M0 30 Q 25 26, 40 16 T 85 18 T 140 4" fill="none" stroke="#F2F0EB" stroke-width="1.5" />
+                <circle cx="140" cy="4" r="3" fill="#F2F0EB" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Feature 2: Seamless Integration -->
+          <div class="silver-card rounded-3xl p-8 sm:p-10 group reveal-up" data-feature-card="integration">
+            <div class="flex items-start justify-between mb-8">
+              <div class="w-14 h-14 rounded-2xl border border-silver/25 bg-obsidian/90 flex items-center justify-center text-starlight group-hover:border-starlight group-hover:scale-105 transition-all">
+                <i data-lucide="git-merge" class="w-6 h-6 stroke-[1.5]"></i>
+              </div>
+              <span class="text-[11px] font-mono tracking-widest text-mutedSilver">02 // INTEGRATION</span>
+            </div>
+
+            <h3 class="font-cinzel text-2xl sm:text-3xl text-starlight mb-4">Seamless Integration</h3>
+            <p class="text-secondaryText font-light leading-relaxed mb-8">
+              Universal orbital adapters connect effortlessly with your existing cloud clusters, data warehouses, and proprietary neural pipelines in minutes.
+            </p>
+
+            <div class="p-4 rounded-2xl bg-obsidian/70 border border-silver/10 flex items-center justify-between">
+              <div>
+                <div class="text-[10px] font-mono text-mutedSilver uppercase">ACTIVE PROTOCOLS</div>
+                <div class="font-cinzel text-lg text-starlight mt-0.5">gRPC · GraphQL · REST</div>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-silver/10 border border-silver/25 text-[10px] font-mono text-silver">ZERO-CONFIG</span>
+            </div>
+          </div>
+
+          <!-- Feature 3: Advanced Security -->
+          <div class="silver-card rounded-3xl p-8 sm:p-10 group reveal-up" data-feature-card="security">
+            <div class="flex items-start justify-between mb-8">
+              <div class="w-14 h-14 rounded-2xl border border-silver/25 bg-obsidian/90 flex items-center justify-center text-starlight group-hover:border-starlight group-hover:scale-105 transition-all">
+                <i data-lucide="shield-check" class="w-6 h-6 stroke-[1.5]"></i>
+              </div>
+              <span class="text-[11px] font-mono tracking-widest text-mutedSilver">03 // SECURITY</span>
+            </div>
+
+            <h3 class="font-cinzel text-2xl sm:text-3xl text-starlight mb-4">Advanced Security</h3>
+            <p class="text-secondaryText font-light leading-relaxed mb-8">
+              Post-quantum lattice encryption, zero-knowledge cryptographic proofs, and hardware-enforced enclaves safeguard every orbital transaction.
+            </p>
+
+            <div class="p-4 rounded-2xl bg-obsidian/70 border border-silver/10 flex items-center justify-between">
+              <div>
+                <div class="text-[10px] font-mono text-mutedSilver uppercase">ENCRYPTION STANDARD</div>
+                <div class="font-cinzel text-lg text-starlight mt-0.5">KYBER-1024 // ZK-SNARK</div>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-silver/10 border border-silver/25 text-[10px] font-mono text-silver">VERIFIED</span>
+            </div>
+          </div>
+
+          <!-- Feature 4: Built for Teams -->
+          <div class="silver-card rounded-3xl p-8 sm:p-10 group reveal-up" data-feature-card="teams">
+            <div class="flex items-start justify-between mb-8">
+              <div class="w-14 h-14 rounded-2xl border border-silver/25 bg-obsidian/90 flex items-center justify-center text-starlight group-hover:border-starlight group-hover:scale-105 transition-all">
+                <i data-lucide="users" class="w-6 h-6 stroke-[1.5]"></i>
+              </div>
+              <span class="text-[11px] font-mono tracking-widest text-mutedSilver">04 // COLLABORATION</span>
+            </div>
+
+            <h3 class="font-cinzel text-2xl sm:text-3xl text-starlight mb-4">Built for Teams</h3>
+            <p class="text-secondaryText font-light leading-relaxed mb-8">
+              Multiplayer spatial workspaces, granular role-based governance, and synchronized version histories empower distributed architects to build in unison.
+            </p>
+
+            <div class="p-4 rounded-2xl bg-obsidian/70 border border-silver/10 flex items-center justify-between">
+              <div>
+                <div class="text-[10px] font-mono text-mutedSilver uppercase">CONCURRENT ARCHITECTS</div>
+                <div class="font-cinzel text-lg text-starlight mt-0.5">UNLIMITED NODES</div>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-silver/10 border border-silver/25 text-[10px] font-mono text-silver">REAL-TIME SYNC</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 6.5 SECTION 5: FINAL CTA                   -->
+    <!-- ========================================== -->
+    <section id="contact" class="relative min-h-[88vh] w-full flex items-center justify-center py-32 px-4 sm:px-8 lg:px-14 overflow-hidden">
+      
+      <!-- Illuminated Silver Orbital Graphic in Background -->
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div class="w-[550px] h-[550px] rounded-full bg-silver/10 blur-[120px]"></div>
+        <svg class="absolute w-[680px] h-[680px] max-w-[92vw] max-h-[92vw] opacity-45" viewBox="0 0 600 600">
+          <defs>
+            <radialGradient id="finalOrbitalGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#F2F0EB" stop-opacity="0.3" />
+              <stop offset="65%" stop-color="#C5C6CB" stop-opacity="0.08" />
+              <stop offset="100%" stop-color="#050505" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+          <circle cx="300" cy="300" r="260" fill="url(#finalOrbitalGlow)" />
+          <circle cx="300" cy="300" r="240" fill="none" stroke="rgba(242,240,235,0.28)" stroke-width="0.9" />
+          <circle cx="300" cy="300" r="195" fill="none" stroke="rgba(197,198,203,0.22)" stroke-width="0.75" stroke-dasharray="5 9" class="origin-center spin-slow" />
+          <ellipse cx="300" cy="300" rx="250" ry="95" fill="none" stroke="rgba(242,240,235,0.32)" stroke-width="1" transform="rotate(-28 300 300)" />
+          <ellipse cx="300" cy="300" rx="250" ry="95" fill="none" stroke="rgba(197,198,203,0.2)" stroke-width="0.8" transform="rotate(32 300 300)" />
+          <circle cx="300" cy="60" r="3.5" fill="#F2F0EB" />
+          <circle cx="300" cy="540" r="3.5" fill="#F2F0EB" />
+        </svg>
+      </div>
+
+      <div class="max-w-4xl mx-auto text-center relative z-10">
+        <!-- Floating Mini Logo Emblem -->
+        <div class="w-20 h-20 mx-auto mb-8 rounded-full border border-silver/30 bg-obsidian/90 flex items-center justify-center shadow-[0_0_50px_rgba(242,240,235,0.2)] reveal-up">
+          <img src="artifacts/file_generation/ttl=63d/intermediate/avaran_logo.webp" alt="AVARAN Emblem" class="w-16 h-16 object-contain logo-blend" />
+        </div>
+
+        <div class="text-[11px] font-mono tracking-[0.38em] uppercase text-silver mb-5 reveal-up">
+          INITIATE CONVERGENCE
+        </div>
+
+        <h2 class="font-cinzel text-4xl sm:text-6xl lg:text-7xl text-starlight tracking-tight leading-[1.1] mb-8 reveal-up">
+          The Future Is Yours <br class="hidden sm:inline" />
+          <span class="silver-gradient-text">to Create.</span>
+        </h2>
+
+        <p class="text-secondaryText text-base sm:text-xl font-light max-w-2xl mx-auto mb-12 reveal-up">
+          Step inside the AVARAN dimension. Deploy your first autonomous orbital cluster or schedule a private architectural briefing.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-5 reveal-up">
+          <button id="begin-journey-btn" type="button" class="magnetic-btn group relative inline-flex items-center gap-4 px-10 py-5 rounded-full bg-gradient-to-r from-starlight via-silver to-starlight text-obsidian font-semibold text-xs sm:text-sm tracking-[0.24em] uppercase shadow-[0_0_50px_rgba(242,240,235,0.35)] hover:shadow-[0_0_75px_rgba(242,240,235,0.65)] transition-all">
+            <span>Begin Your Journey</span>
+            <i data-lucide="sparkles" class="w-4 h-4 group-hover:rotate-90 transition-transform duration-500"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MINIMAL ARCHITECTURAL FOOTER               -->
+  <!-- ========================================== -->
+  <footer class="relative z-10 border-t border-iron bg-obsidian/90 backdrop-blur-xl py-12 px-4 sm:px-8 lg:px-14">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <img src="artifacts/file_generation/ttl=63d/intermediate/avaran_logo.webp" alt="AVARAN" class="w-8 h-8 object-contain logo-blend" />
+        <span class="font-cinzel text-sm tracking-[0.28em] text-starlight">AVARAN</span>
+        <span class="text-xs text-mutedSilver font-mono ml-2">© 2026 ORBITAL SYSTEMS INC.</span>
+      </div>
+
+      <div class="flex items-center gap-6 text-xs tracking-widest uppercase text-mutedSilver">
+        <a href="#home" data-scroll-to="#home" class="hover:text-starlight transition-colors">Top</a>
+        <a href="#about" data-scroll-to="#about" class="hover:text-starlight transition-colors">Philosophy</a>
+        <a href="#explore" data-scroll-to="#explore" class="hover:text-starlight transition-colors">Systems</a>
+        <a href="#features" data-scroll-to="#features" class="hover:text-starlight transition-colors">Security</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- INTERACTIVE MODAL: SYSTEM DETAIL / JOURNEY -->
+  <!-- ========================================== -->
+  <div id="avaran-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" class="fixed inset-0 z-[95] hidden items-center justify-center p-4 sm:p-6 bg-obsidian/85 backdrop-blur-2xl opacity-0 transition-opacity duration-300">
+    <div class="relative w-full max-w-xl rounded-3xl glass-panel border border-silver/30 p-7 sm:p-10 shadow-[0_25px_80px_rgba(0,0,0,0.95)]">
+      <button id="modal-close-btn" type="button" aria-label="Close modal" class="absolute top-6 right-6 w-10 h-10 rounded-full border border-silver/20 flex items-center justify-center text-secondaryText hover:text-starlight hover:border-starlight transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <img src="artifacts/file_generation/ttl=63d/intermediate/avaran_logo.webp" alt="AVARAN" class="w-8 h-8 object-contain logo-blend" />
+        <span id="modal-tag" class="text-[10px] font-mono tracking-[0.3em] uppercase text-silver">ORBITAL INITIALIZATION</span>
+      </div>
+
+      <h3 id="modal-title" class="font-cinzel text-2xl sm:text-3xl text-starlight mb-3">
+        Request Private Orbital Access
+      </h3>
+      <p id="modal-desc" class="text-sm text-secondaryText font-light leading-relaxed mb-6">
+        Enter your institutional coordinates below to provision an isolated AVARAN node or inspect real-time architectural specifications.
+      </p>
+
+      <!-- Interactive Form inside Modal -->
+      <form id="modal-access-form" class="space-y-4">
+        <div>
+          <label for="architect-name" class="block text-[10px] font-mono tracking-widest uppercase text-mutedSilver mb-1.5">ARCHITECT IDENTIFIER</label>
+          <input id="architect-name" type="text" required placeholder="Dr. Elena Vance" class="w-full px-4 py-3 rounded-xl bg-obsidian/90 border border-silver/20 text-sm text-starlight placeholder-mutedSilver/50 focus:outline-none focus:border-starlight transition-colors" />
+        </div>
+        <div>
+          <label for="architect-email" class="block text-[10px] font-mono tracking-widest uppercase text-mutedSilver mb-1.5">TRANSMISSION ENDPOINT (EMAIL)</label>
+          <input id="architect-email" type="email" required placeholder="vance@orbital-institute.org" class="w-full px-4 py-3 rounded-xl bg-obsidian/90 border border-silver/20 text-sm text-starlight placeholder-mutedSilver/50 focus:outline-none focus:border-starlight transition-colors" />
+        </div>
+        <div>
+          <label for="architect-tier" class="block text-[10px] font-mono tracking-widest uppercase text-mutedSilver mb-1.5">COMPUTATIONAL TOPOLOGY</label>
+          <select id="architect-tier" class="w-full px-4 py-3 rounded-xl bg-obsidian/90 border border-silver/20 text-sm text-starlight focus:outline-none focus:border-starlight transition-colors">
+            <option value="Cognitive Orbital Synthesis">Cognitive Orbital Synthesis (1.4 PB/s)</option>
+            <option value="Astrolabe Spatial Telemetry">Astrolabe Spatial Telemetry (Sub-mm Grid)</option>
+            <option value="Kinetic Continuum Engine">Kinetic Continuum Engine (Elastic Mesh)</option>
+            <option value="Full Sovereign Enterprise Cluster">Full Sovereign Enterprise Cluster</option>
+          </select>
+        </div>
+
+        <button type="submit" class="w-full mt-2 py-4 rounded-full bg-starlight text-obsidian font-medium text-xs tracking-[0.22em] uppercase hover:bg-silver transition-colors">
+          Initialize Orbital Handshake
+        </button>
+      </form>
+
+      <!-- Confirmation State -->
+      <div id="modal-success-msg" class="hidden py-6 text-center space-y-3">
+        <div class="w-12 h-12 rounded-full bg-silver/15 border border-starlight mx-auto flex items-center justify-center text-starlight">
+          <i data-lucide="check" class="w-6 h-6"></i>
+        </div>
+        <h4 class="font-cinzel text-xl text-starlight">Orbital Coordinates Locked</h4>
+        <p id="modal-success-detail" class="text-xs text-secondaryText font-mono tracking-wider"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- APPLICATION LOGIC & 3D / GSAP ORCHESTRATION-->
+  <!-- ========================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // Initialize Lucide icons
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const isMobile = window.innerWidth < 768;
+
+      // =========================================================
+      // 1. SYNTHESIZED AMBIENT COSMIC SOUND ENGINE (Web Audio API)
+      // =========================================================
+      let audioCtx = null;
+      let isSoundPlaying = false;
+      let masterGain = null;
+
+      function initAmbientAudio() {
+        if (audioCtx) return;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        audioCtx = new AudioContextClass();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+
+        // Deep harmonic drone oscillators (A2 + E3 + C#4 cosmic chord)
+        const freqs = [110, 164.81, 220, 277.18];
+        freqs.forEach((f, idx) => {
+          const osc = audioCtx.createOscillator();
+          const oscGain = audioCtx.createGain();
+          osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+
+          // Lowpass filter for warm muffled luxury ambience
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(340, audioCtx.currentTime);
+
+          oscGain.gain.setValueAtTime(0.035 / (idx + 1), audioCtx.currentTime);
+          osc.connect(filter);
+          filter.connect(oscGain);
+          oscGain.connect(masterGain);
+          osc.start();
+        });
+      }
+
+      function playUiChime(freq = 528) {
+        if (!isSoundPlaying || !audioCtx) return;
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(freq * 1.25, audioCtx.currentTime + 0.18);
+
+          gain.gain.setValueAtTime(0.025, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.22);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.24);
+        } catch (e) {
+          // Ignore audio gesture blocks
+        }
+      }
+
+      const soundToggleBtn = document.getElementById('sound-toggle-btn');
+      const soundStatusText = document.getElementById('sound-status-text');
+
+      if (soundToggleBtn) {
+        soundToggleBtn.addEventListener('click', () => {
+          initAmbientAudio();
+          if (!audioCtx) return;
+
+          if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+
+          isSoundPlaying = !isSoundPlaying;
+          soundToggleBtn.setAttribute('aria-pressed', String(isSoundPlaying));
+
+          if (isSoundPlaying) {
+            masterGain.gain.exponentialRampToValueAtTime(0.28, audioCtx.currentTime + 0.8);
+            soundToggleBtn.classList.add('sound-active', 'border-starlight');
+            if (soundStatusText) soundStatusText.textContent = 'Audio On';
+            playUiChime(660);
+          } else {
+            masterGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+            soundToggleBtn.classList.remove('sound-active', 'border-starlight');
+            if (soundStatusText) soundStatusText.textContent = 'Audio Off';
+          }
+        });
+      }
+
+      // =========================================================
+      // 2. CINEMATIC PRELOADER SEQUENCE
+      // =========================================================
+      const preloader = document.getElementById('preloader');
+      const preloaderCanvas = document.getElementById('preloader-canvas');
+      const preloaderLightRing = document.getElementById('preloader-light-ring');
+      const preloaderLogoWrap = document.getElementById('preloader-logo-wrap');
+      const preloaderStatus = document.getElementById('preloader-status');
+      const preloaderStageLabel = document.getElementById('preloader-stage-label');
+      const preloaderCounter = document.getElementById('preloader-counter');
+      const skipPreloaderBtn = document.getElementById('skip-preloader-btn');
+
+      let preloaderAnimId = null;
+      let preloaderFinished = false;
+
+      function completePreloader() {
+        if (preloaderFinished) return;
+        preloaderFinished = true;
+        if (preloaderAnimId) cancelAnimationFrame(preloaderAnimId);
+
+        if (window.gsap) {
+          gsap.to(preloader, {
+            opacity: 0,
+            duration: prefersReducedMotion ? 0.1 : 0.85,
+            ease: 'power3.inOut',
+            onComplete: () => {
+              preloader.style.display = 'none';
+              triggerHeroEntrance();
+            }
+          });
+        } else {
+          preloader.style.display = 'none';
+          triggerHeroEntrance();
+        }
+      }
+
+      if (skipPreloaderBtn) {
+        skipPreloaderBtn.addEventListener('click', completePreloader);
+      }
+
+      function runPreloaderSequence() {
+        if (prefersReducedMotion) {
+          completePreloader();
+          return;
+        }
+
+        // Particle convergence canvas
+        if (preloaderCanvas) {
+          const ctx = preloaderCanvas.getContext('2d');
+          let w = (preloaderCanvas.width = window.innerWidth);
+          let h = (preloaderCanvas.height = window.innerHeight);
+
+          const count = isMobile ? 55 : 110;
+          const particles = Array.from({ length: count }, () => {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 180 + Math.random() * Math.max(w, h) * 0.45;
+            return {
+              angle,
+              dist,
+              targetRadius: 72 + Math.random() * 42,
+              speed: 0.012 + Math.random() * 0.022,
+              size: 0.8 + Math.random() * 1.8,
+              alpha: 0
+            };
+          });
+
+          let startTime = performance.now();
+          function renderPreloaderParticles(now) {
+            const elapsed = (now - startTime) / 1000;
+            ctx.clearRect(0, 0, w, h);
+
+            particles.forEach((p) => {
+              // Step 2: small silver particles gradually appear
+              if (elapsed > 0.15) {
+                p.alpha = Math.min(0.85, p.alpha + 0.025);
+              }
+              // Step 3: particles move toward center and form orbital structure
+              if (elapsed > 0.45) {
+                p.dist += (p.targetRadius - p.dist) * 0.065;
+              }
+              p.angle += p.speed;
+
+              const x = w / 2 + Math.cos(p.angle) * p.dist;
+              const y = h / 2 + Math.sin(p.angle) * p.dist;
+
+              ctx.beginPath();
+              ctx.arc(x, y, p.size, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(242, 240, 235, ${p.alpha})`;
+              ctx.fill();
+            });
+
+            if (!preloaderFinished) {
+              preloaderAnimId = requestAnimationFrame(renderPreloaderParticles);
+            }
+          }
+          preloaderAnimId = requestAnimationFrame(renderPreloaderParticles);
+        }
+
+        // GSAP Timeline for Preloader Steps 4 -> 7
+        if (window.gsap) {
+          const tl = gsap.timeline({
+            onComplete: completePreloader
+          });
+
+          const progressObj = { val: 0 };
+          tl.to(progressObj, {
+            val: 100,
+            duration: 2.5,
+            ease: 'power2.inOut',
+            onUpdate: () => {
+              const v = Math.round(progressObj.val);
+              if (preloaderCounter) preloaderCounter.textContent = String(v).padStart(2, '0') + '%';
+              if (preloaderStageLabel) {
+                if (v < 35) preloaderStageLabel.textContent = 'CONVERGING SILVER PARTICLES';
+                else if (v < 70) preloaderStageLabel.textContent = 'FORMING ORBITAL STRUCTURE';
+                else preloaderStageLabel.textContent = 'MATERIALIZING AVARAN CORE';
+              }
+            }
+          }, 0);
+
+          // Step 4: AVARAN logo slowly materializes
+          tl.to(preloaderLogoWrap, {
+            opacity: 1,
+            scale: 1,
+            duration: 1.1,
+            ease: 'power3.out'
+          }, 0.65);
+
+          // Step 5: Thin circular light travels around the logo
+          tl.to(preloaderLightRing, {
+            strokeDashoffset: 0,
+            duration: 1.35,
+            ease: 'power2.inOut'
+          }, 0.85);
+
+          // Step 6: Display "ENTERING AVARAN"
+          tl.to(preloaderStatus, {
+            opacity: 1,
+            y: 0,
+            duration: 0.65,
+            ease: 'power3.out'
+          }, 1.45);
+
+          // Hold briefly then transition
+          tl.to({}, { duration: 0.45 });
+        } else {
+          setTimeout(completePreloader, 1800);
+        }
+      }
+
+      // Trigger Hero text reveal after preloader finishes
+      function triggerHeroEntrance() {
+        if (!window.gsap) return;
+        const words = document.querySelectorAll('#hero-heading .word-inner');
+        gsap.to(words, {
+          y: '0%',
+          opacity: 1,
+          duration: 1.0,
+          stagger: 0.09,
+          ease: 'power4.out'
+        });
+        gsap.to('#hero-description', {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          delay: 0.45,
+          ease: 'power3.out'
+        });
+        gsap.to('#hero-cta-group', {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          delay: 0.62,
+          ease: 'power3.out'
+        });
+      }
+
+      runPreloaderSequence();
+
+      // =========================================================
+      // 3. LENIS SMOOTH SCROLL & GSAP SCROLLTRIGGER SETUP
+      // =========================================================
+      let lenis = null;
+      if (window.Lenis && !prefersReducedMotion) {
+        lenis = new Lenis({
+          duration: 1.15,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true
+        });
+
+        function raf(time) {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+      }
+
+      if (window.gsap && window.ScrollTrigger) {
+        gsap.registerPlugin(ScrollTrigger);
+      }
+
+      // Smooth Anchor Navigation
+      document.querySelectorAll('[data-scroll-to]').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          playUiChime(587.33);
+          const targetSel = el.getAttribute('data-scroll-to');
+          const targetEl = document.querySelector(targetSel);
+          if (!targetEl) return;
+          if (lenis) {
+            lenis.scrollTo(targetEl, { offset: -40 });
+          } else {
+            targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+
+      // Mobile Drawer Logic
+      const mobileDrawer = document.getElementById('mobile-drawer');
+      const mobileOpenBtn = document.getElementById('mobile-menu-open-btn');
+      const mobileCloseBtn = document.getElementById('mobile-menu-close-btn');
+
+      function setMobileDrawer(open) {
+        if (!mobileDrawer) return;
+        if (open) {
+          mobileDrawer.classList.remove('pointer-events-none', 'opacity-0');
+          mobileDrawer.classList.add('pointer-events-auto', 'opacity-100');
+          if (mobileOpenBtn) mobileOpenBtn.setAttribute('aria-expanded', 'true');
+        } else {
+          mobileDrawer.classList.add('pointer-events-none', 'opacity-0');
+          mobileDrawer.classList.remove('pointer-events-auto', 'opacity-100');
+          if (mobileOpenBtn) mobileOpenBtn.setAttribute('aria-expanded', 'false');
+        }
+      }
+
+      if (mobileOpenBtn) mobileOpenBtn.addEventListener('click', () => setMobileDrawer(true));
+      if (mobileCloseBtn) mobileCloseBtn.addEventListener('click', () => setMobileDrawer(false));
+
+      document.querySelectorAll('[data-mobile-link]').forEach((link) => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetSel = link.getAttribute('data-mobile-link');
+          setMobileDrawer(false);
+          const targetEl = document.querySelector(targetSel);
+          if (targetEl) {
+            if (lenis) lenis.scrollTo(targetEl);
+            else targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+
+      // =========================================================
+      // 4. INTERACTIVE 3D ORBITAL SCULPTURE (Three.js)
+      // =========================================================
+      const webglCanvas = document.getElementById('avaran-webgl-canvas');
+      const webglFallback = document.getElementById('webgl-fallback');
+      const hitbox = document.getElementById('hero-sculpture-hitbox');
+      const sculptureHudState = document.getElementById('sculpture-hud-state');
+      const sculptureLumDot = document.getElementById('sculpture-lum-dot');
+
+      // Shared Sculpture State (controlled by scroll, mouse, hover, and Section 3 sliders)
+      const sculptureState = {
+        mouseX: 0,
+        mouseY: 0,
+        targetRotX: 0,
+        targetRotY: 0,
+        hoverIntensity: 0,
+        targetHoverIntensity: 0,
+        speedMultiplier: 1.0,
+        ringExpansion: 1.0,
+        scrollProgress: 0,
+        sectionOffsetX: 2.1, // Starts positioned on the right side for the Hero section
+        sectionScale: 1.0
+      };
+
+      function initThreeOrbitalSculpture() {
+        if (!window.THREE || !webglCanvas) {
+          if (webglFallback) webglFallback.classList.remove('hidden');
+          return;
+        }
+
+        try {
+          const renderer = new THREE.WebGLRenderer({
+            canvas: webglCanvas,
+            alpha: true,
+            antialias: !isMobile,
+            powerPreference: 'high-performance'
+          });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+          renderer.setSize(window.innerWidth, window.innerHeight);
+
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(
+            42,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            100
+          );
+          camera.position.set(0, 0, 10.5);
+
+          // Master Orbital Root Group
+          const rootGroup = new THREE.Group();
+          sculptureState.sectionOffsetX = window.innerWidth >= 1024 ? 2.25 : 0;
+          rootGroup.position.x = sculptureState.sectionOffsetX;
+          scene.add(rootGroup);
+
+          // Group 1: Translucent Silver Flowing Ribbons (Inspired directly by the AVARAN logo)
+          const ribbonGroup = new THREE.Group();
+          rootGroup.add(ribbonGroup);
+
+          const ribbonMaterials = [];
+
+          // Build 3 intertwined parametric silver ribbons that mirror the organic curves of the AVARAN logo
+          const ribbonConfigs = [
+            { radius: 2.05, tube: 0.22, p: 2, q: 3, rotX: 0.4, rotY: 0.2, opacity: 0.48 },
+            { radius: 1.85, tube: 0.15, p: 3, q: 2, rotX: -0.6, rotY: 0.8, opacity: 0.36 },
+            { radius: 2.25, tube: 0.08, p: 1, q: 2, rotX: 0.9, rotY: -0.4, opacity: 0.65 }
+          ];
+
+          ribbonConfigs.forEach((cfg) => {
+            const geom = new THREE.TorusKnotGeometry(
+              cfg.radius,
+              cfg.tube,
+              isMobile ? 96 : 180,
+              isMobile ? 16 : 28,
+              cfg.p,
+              cfg.q
+            );
+            // Flatten slightly along Z to give a sculpted silk-ribbon profile
+            geom.scale(1.0, 1.08, 0.55);
+
+            const mat = new THREE.MeshPhysicalMaterial({
+              color: new THREE.Color('#C5C6CB'),
+              emissive: new THREE.Color('#242528'),
+              emissiveIntensity: 0.35,
+              metalness: 0.88,
+              roughness: 0.2,
+              transparent: true,
+              opacity: cfg.opacity,
+              side: THREE.DoubleSide,
+              wireframe: false
+            });
+            ribbonMaterials.push({ mat, baseOpacity: cfg.opacity });
+
+            const mesh = new THREE.Mesh(geom, mat);
+            mesh.rotation.set(cfg.rotX, cfg.rotY, 0);
+            ribbonGroup.add(mesh);
+
+            // Subtle wireframe glowing edge overlay on each ribbon
+            const wireMat = new THREE.MeshBasicMaterial({
+              color: 0xF2F0EB,
+              transparent: true,
+              opacity: 0.09,
+              wireframe: true
+            });
+            ribbonMaterials.push({ mat: wireMat, baseOpacity: 0.09 });
+            const wireMesh = new THREE.Mesh(geom, wireMat);
+            wireMesh.rotation.copy(mesh.rotation);
+            wireMesh.scale.setScalar(1.003);
+            ribbonGroup.add(wireMesh);
+          });
+
+          // Group 2: Multiple Orbiting Circular Astrolabe Rings
+          const ringsGroup = new THREE.Group();
+          rootGroup.add(ringsGroup);
+
+          const ringRadii = [2.65, 3.05, 3.45, 3.85];
+          ringRadii.forEach((r, idx) => {
+            const torusGeom = new THREE.TorusGeometry(r, idx % 2 === 0 ? 0.012 : 0.007, 12, isMobile ? 90 : 160);
+            const ringMat = new THREE.MeshBasicMaterial({
+              color: idx === 0 ? 0xF2F0EB : 0xC5C6CB,
+              transparent: true,
+              opacity: 0.38 - idx * 0.06
+            });
+            ribbonMaterials.push({ mat: ringMat, baseOpacity: 0.38 - idx * 0.06 });
+
+            const ringMesh = new THREE.Mesh(torusGeom, ringMat);
+            ringMesh.rotation.set(
+              (idx * Math.PI) / 5 + 0.3,
+              (idx * Math.PI) / 4,
+              idx * 0.2
+            );
+
+            // Attach small orbital node spheres along the ring
+            const nodeGeom = new THREE.SphereGeometry(0.042, 12, 12);
+            const nodeMat = new THREE.MeshBasicMaterial({ color: 0xF2F0EB });
+            const nodeMesh = new THREE.Mesh(nodeGeom, nodeMat);
+            nodeMesh.position.set(r, 0, 0);
+            ringMesh.add(nodeMesh);
+
+            ringsGroup.add(ringMesh);
+          });
+
+          // Group 3: Floating Particles & Cosmic Dust
+          const particleCount = isMobile ? 220 : 520;
+          const particleGeom = new THREE.BufferGeometry();
+          const positions = new Float32Array(particleCount * 3);
+
+          for (let i = 0; i < particleCount; i++) {
+            const radius = 1.8 + Math.random() * 5.2;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+            positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            positions[i * 3 + 2] = radius * Math.cos(phi);
+          }
+          particleGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+          const particleMat = new THREE.PointsMaterial({
+            color: 0xF2F0EB,
+            size: isMobile ? 0.035 : 0.028,
+            transparent: true,
+            opacity: 0.55,
+            blending: THREE.AdditiveBlending
+          });
+          const particleCloud = new THREE.Points(particleGeom, particleMat);
+          rootGroup.add(particleCloud);
+
+          // Atmospheric Studio Lighting
+          const ambientLight = new THREE.AmbientLight(0xC5C6CB, 0.8);
+          scene.add(ambientLight);
+
+          const keyLight = new THREE.PointLight(0xF2F0EB, 2.6, 25);
+          keyLight.position.set(5, 5, 6);
+          scene.add(keyLight);
+
+          const rimLight = new THREE.PointLight(0x85868B, 2.0, 25);
+          rimLight.position.set(-6, -4, -3);
+          scene.add(rimLight);
+
+          // Hover Luminosity Interaction on Hitbox
+          if (hitbox) {
+            hitbox.addEventListener('mouseenter', () => {
+              sculptureState.targetHoverIntensity = 1;
+              if (sculptureHudState) sculptureHudState.textContent = 'LUMINOSITY // AMPLIFIED';
+              if (sculptureLumDot) sculptureLumDot.classList.replace('bg-silver', 'bg-starlight');
+              playUiChime(740);
+            });
+            hitbox.addEventListener('mouseleave', () => {
+              sculptureState.targetHoverIntensity = 0;
+              if (sculptureHudState) sculptureHudState.textContent = 'ORBITAL FIELD // INTERACTIVE';
+              if (sculptureLumDot) sculptureLumDot.classList.replace('bg-starlight', 'bg-silver');
+            });
+          }
+
+          // Resize Handler
+          window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+          });
+
+          // Render Loop
+          const clock = new THREE.Clock();
+          function animateThree() {
+            requestAnimationFrame(animateThree);
+            const delta = clock.getDelta();
+            const elapsed = clock.getElapsedTime();
+
+            // Smoothly interpolate hover luminosity
+            sculptureState.hoverIntensity += (sculptureState.targetHoverIntensity - sculptureState.hoverIntensity) * 0.06;
+
+            // Update key light and material emissive intensity on hover
+            keyLight.intensity = 2.6 + sculptureState.hoverIntensity * 2.2;
+            ribbonMaterials.forEach((item) => {
+              if (item.mat.emissiveIntensity !== undefined) {
+                item.mat.emissiveIntensity = 0.35 + sculptureState.hoverIntensity * 0.55;
+              }
+              item.mat.opacity = Math.min(0.95, item.baseOpacity + sculptureState.hoverIntensity * 0.18);
+            });
+
+            const speed = prefersReducedMotion ? 0.1 : sculptureState.speedMultiplier * (1 + sculptureState.hoverIntensity * 0.45);
+
+            // Rotate translucent ribbons
+            ribbonGroup.rotation.y += delta * 0.24 * speed;
+            ribbonGroup.rotation.x = Math.sin(elapsed * 0.35) * 0.25 + sculptureState.scrollProgress * Math.PI * 1.4;
+            ribbonGroup.rotation.z += delta * 0.1 * speed;
+
+            // Rotate each astrolabe ring independently
+            ringsGroup.children.forEach((ring, i) => {
+              const dir = i % 2 === 0 ? 1 : -1;
+              ring.rotation.z += delta * (0.14 + i * 0.04) * dir * speed;
+              ring.rotation.x += delta * 0.08 * dir * speed;
+            });
+
+            // Apply ring expansion from scroll + interactive slider
+            const ringScale = sculptureState.ringExpansion * (1 + Math.sin(sculptureState.scrollProgress * Math.PI * 2) * 0.12);
+            ringsGroup.scale.setScalar(ringScale);
+
+            // Subtle cosmic dust rotation
+            particleCloud.rotation.y -= delta * 0.05 * speed;
+            particleCloud.rotation.x = sculptureState.scrollProgress * 0.8;
+
+            // Mouse Parallax Influence
+            sculptureState.targetRotY = sculptureState.mouseX * 0.45;
+            sculptureState.targetRotX = sculptureState.mouseY * 0.35;
+            rootGroup.rotation.y += (sculptureState.targetRotY - rootGroup.rotation.y) * 0.05;
+            rootGroup.rotation.x += (sculptureState.targetRotX - rootGroup.rotation.x) * 0.05;
+
+            // Smooth position & scale transitions driven by ScrollTrigger
+            rootGroup.position.x += (sculptureState.sectionOffsetX - rootGroup.position.x) * 0.06;
+            const currentScale = rootGroup.scale.x;
+            const nextScale = currentScale + (sculptureState.sectionScale - currentScale) * 0.06;
+            rootGroup.scale.setScalar(nextScale);
+
+            renderer.render(scene, camera);
+          }
+
+          animateThree();
+        } catch (err) {
+          // Graceful Fallback if WebGL context creation fails
+          if (webglFallback) {
+            webglFallback.classList.remove('hidden');
+            webglFallback.classList.add('flex');
+          }
+        }
+      }
+
+      initThreeOrbitalSculpture();
+
+      // =========================================================
+      // 5. SCROLL-BASED STORYTELLING (GSAP ScrollTrigger)
+      // =========================================================
+      const navbarInner = document.getElementById('navbar-inner');
+      const scrollProgressBar = document.getElementById('scroll-progress-bar');
+      const scrollTelemetryPct = document.getElementById('scroll-telemetry-pct');
+      const scrollTelemetryThumb = document.getElementById('scroll-telemetry-thumb');
+      const navLinks = document.querySelectorAll('.nav-link');
+
+      window.addEventListener('scroll', () => {
+        const scrollTop = window.scrollY;
+        const docHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        const progress = Math.min(1, Math.max(0, scrollTop / docHeight));
+
+        sculptureState.scrollProgress = progress;
+
+        // Update top progress bar & right telemetry
+        if (scrollProgressBar) scrollProgressBar.style.width = `${progress * 100}%`;
+        if (scrollTelemetryPct) scrollTelemetryPct.textContent = String(Math.round(progress * 100)).padStart(2, '0') + '%';
+        if (scrollTelemetryThumb) scrollTelemetryThumb.style.top = `${progress * 84}px`;
+
+        // Navbar background gradually becomes more opaque when scrolling
+        if (navbarInner) {
+          if (scrollTop > 40) {
+            navbarInner.classList.add('glass-panel', 'shadow-[0_10px_40px_rgba(0,0,0,0.85)]');
+          } else {
+            navbarInner.classList.remove('glass-panel', 'shadow-[0_10px_40px_rgba(0,0,0,0.85)]');
+          }
+        }
+
+        // Dynamic Section Sculptural Choreography
+        const isDesktop = window.innerWidth >= 1024;
+        if (!isDesktop) {
+          sculptureState.sectionOffsetX = 0;
+          sculptureState.sectionScale = 0.78;
+        } else if (progress < 0.18) {
+          // Hero: Sculpture on Right
+          sculptureState.sectionOffsetX = 2.25;
+          sculptureState.sectionScale = 1.0;
+        } else if (progress < 0.42) {
+          // Philosophy: Centered & expanded subtly behind typography
+          sculptureState.sectionOffsetX = 0;
+          sculptureState.sectionScale = 1.22;
+        } else if (progress < 0.62) {
+          // Explore Possibilities: Shifted left & condensed
+          sculptureState.sectionOffsetX = -2.4;
+          sculptureState.sectionScale = 0.85;
+        } else if (progress < 0.82) {
+          // The AVARAN Experience: Positioned right/center in the viewport frame
+          sculptureState.sectionOffsetX = 1.45;
+          sculptureState.sectionScale = 1.15;
+        } else {
+          // Final CTA: Centered grand orbital alignment
+          sculptureState.sectionOffsetX = 0;
+          sculptureState.sectionScale = 1.08;
+        }
+      }, { passive: true });
+
+      // Active Navbar Link Highlighting by Section
+      const sectionIds = ['home', 'about', 'explore', 'experience', 'features', 'contact'];
+      window.addEventListener('scroll', () => {
+        let currentSection = 'home';
+        sectionIds.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            if (rect.top <= window.innerHeight * 0.45) {
+              currentSection = id;
+            }
+          }
+        });
+        // Map experience to explore for the 5 primary nav links
+        const mapped = currentSection === 'experience' ? 'explore' : currentSection;
+        navLinks.forEach((link) => {
+          const href = link.getAttribute('href');
+          if (href === `#${mapped}`) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }, { passive: true });
+
+      // GSAP ScrollTrigger Reveal Animations for Sections
+      if (window.gsap && window.ScrollTrigger && !prefersReducedMotion) {
+        gsap.utils.toArray('.reveal-up').forEach((elem) => {
+          gsap.fromTo(
+            elem,
+            { opacity: 0, y: 36 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.95,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: elem,
+                start: 'top 86%',
+                toggleActions: 'play none none reverse'
+              }
+            }
+          );
+        });
+      }
+
+      // =========================================================
+      // 6. SECTION 1: PHILOSOPHY MOVING GEOMETRIC LINES CANVAS
+      // =========================================================
+      const philoCanvas = document.getElementById('philosophy-geo-canvas');
+      if (philoCanvas) {
+        const pCtx = philoCanvas.getContext('2d');
+        let pw = (philoCanvas.width = window.innerWidth);
+        let ph = (philoCanvas.height = window.innerHeight);
+
+        const nodes = Array.from({ length: isMobile ? 18 : 34 }, () => ({
+          x: Math.random() * pw,
+          y: Math.random() * ph,
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: (Math.random() - 0.5) * 0.35
+        }));
+
+        window.addEventListener('resize', () => {
+          pw = philoCanvas.width = window.innerWidth;
+          ph = philoCanvas.height = window.innerHeight;
+        });
+
+        function renderPhilosophyLines() {
+          pCtx.clearRect(0, 0, pw, ph);
+          nodes.forEach((n, idx) => {
+            n.x += n.vx;
+            n.y += n.vy;
+            if (n.x < 0 || n.x > pw) n.vx *= -1;
+            if (n.y < 0 || n.y > ph) n.vy *= -1;
+
+            pCtx.beginPath();
+            pCtx.arc(n.x, n.y, 1.5, 0, Math.PI * 2);
+            pCtx.fillStyle = 'rgba(197, 198, 203, 0.35)';
+            pCtx.fill();
+
+            for (let j = idx + 1; j < nodes.length; j++) {
+              const m = nodes[j];
+              const dx = n.x - m.x;
+              const dy = n.y - m.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < 190) {
+                pCtx.beginPath();
+                pCtx.moveTo(n.x, n.y);
+                pCtx.lineTo(m.x, m.y);
+                pCtx.strokeStyle = `rgba(197, 198, 203, ${(1 - dist / 190) * 0.14})`;
+                pCtx.lineWidth = 0.7;
+                pCtx.stroke();
+              }
+            }
+          });
+          if (!prefersReducedMotion) {
+            requestAnimationFrame(renderPhilosophyLines);
+          }
+        }
+        renderPhilosophyLines();
+      }
+
+      // =========================================================
+      // 7. SECTION 2: 3D TILT CARDS & DOMAIN FILTERING
+      // =========================================================
+      const tiltCards = document.querySelectorAll('.tilt-card');
+      tiltCards.forEach((card) => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          card.style.setProperty('--card-mouse-x', `${x}px`);
+          card.style.setProperty('--card-mouse-y', `${y}px`);
+
+          if (prefersReducedMotion || isMobile) return;
+          const rotateY = ((x / rect.width) - 0.5) * 12;
+          const rotateX = ((0.5 - (y / rect.height)) * 12);
+          card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-6px)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+        });
+      });
+
+      // Domain Filter Buttons in Section 2
+      const filterBtns = document.querySelectorAll('.domain-filter-btn');
+      filterBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          playUiChime(620);
+          const filter = btn.getAttribute('data-domain-filter');
+
+          filterBtns.forEach((b) => {
+            b.classList.remove('active', 'border-starlight', 'bg-starlight', 'text-obsidian');
+            b.classList.add('border-silver/20', 'bg-graphite/60', 'text-secondaryText');
+          });
+          btn.classList.add('active', 'border-starlight', 'bg-starlight', 'text-obsidian');
+          btn.classList.remove('border-silver/20', 'bg-graphite/60', 'text-secondaryText');
+
+          tiltCards.forEach((card) => {
+            const domain = card.getAttribute('data-domain');
+            if (filter === 'all' || domain === filter) {
+              card.style.display = 'flex';
+            } else {
+              card.style.display = 'none';
+            }
+          });
+        });
+      });
+
+      // =========================================================
+      // 8. SECTION 3: EXPERIENCE ORBITAL CONTROLS & SLIDERS
+      // =========================================================
+      const orbitModeBtns = document.querySelectorAll('.orbit-mode-btn');
+      const speedSlider = document.getElementById('sculpture-speed-slider');
+      const scaleSlider = document.getElementById('sculpture-scale-slider');
+      const velocityVal = document.getElementById('velocity-val');
+      const expansionVal = document.getElementById('expansion-val');
+      const telemetryInclination = document.getElementById('telemetry-inclination');
+      const telemetryFlux = document.getElementById('telemetry-flux');
+
+      const modePresets = {
+        equilibrium: { speed: 1.0, scale: 100, inc: '23.44° N // LOCKED', flux: '98.4 LUM // NOMINAL' },
+        singularity: { speed: 0.4, scale: 76, inc: '00.00° N // CONVERGED', flux: '142.0 LUM // DENSE' },
+        supernova: { speed: 2.8, scale: 132, inc: '64.18° N // EXPANDED', flux: '310.8 LUM // SURGE' }
+      };
+
+      orbitModeBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          playUiChime(698.46);
+          const mode = btn.getAttribute('data-orbit-mode');
+          const preset = modePresets[mode];
+          if (!preset) return;
+
+          orbitModeBtns.forEach((b) => {
+            b.classList.remove('active', 'border-starlight', 'bg-starlight/10');
+            b.classList.add('border-silver/20', 'bg-graphite/70');
+          });
+          btn.classList.add('active', 'border-starlight', 'bg-starlight/10');
+          btn.classList.remove('border-silver/20', 'bg-graphite/70');
+
+          sculptureState.speedMultiplier = preset.speed;
+          sculptureState.ringExpansion = preset.scale / 100;
+
+          if (speedSlider) speedSlider.value = String(preset.speed);
+          if (scaleSlider) scaleSlider.value = String(preset.scale);
+          if (velocityVal) velocityVal.textContent = `${preset.speed.toFixed(1)}x`;
+          if (expansionVal) expansionVal.textContent = `${preset.scale}%`;
+          if (telemetryInclination) telemetryInclination.textContent = preset.inc;
+          if (telemetryFlux) telemetryFlux.textContent = preset.flux;
+        });
+      });
+
+      if (speedSlider) {
+        speedSlider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          sculptureState.speedMultiplier = val;
+          if (velocityVal) velocityVal.textContent = `${val.toFixed(1)}x`;
+        });
+      }
+
+      if (scaleSlider) {
+        scaleSlider.addEventListener('input', (e) => {
+          const val = parseInt(e.target.value, 10);
+          sculptureState.ringExpansion = val / 100;
+          if (expansionVal) expansionVal.textContent = `${val}%`;
+        });
+      }
+
+      // =========================================================
+      // 9. CURSOR, AMBIENT MOUSE LIGHT & MAGNETIC BUTTONS
+      // =========================================================
+      const cursorDot = document.getElementById('cursor-dot');
+      const cursorRing = document.getElementById('cursor-ring');
+      let ringX = window.innerWidth / 2;
+      let ringY = window.innerHeight / 2;
+      let mouseClientX = ringX;
+      let mouseClientY = ringY;
+
+      window.addEventListener('mousemove', (e) => {
+        mouseClientX = e.clientX;
+        mouseClientY = e.clientY;
+
+        document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+        document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+
+        // Normalized coordinates (-1 to +1) for Three.js sculpture parallax
+        sculptureState.mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+        sculptureState.mouseY = -((e.clientY / window.innerHeight) * 2 - 1);
+
+        if (cursorDot) {
+          cursorDot.style.left = `${e.clientX}px`;
+          cursorDot.style.top = `${e.clientY}px`;
+        }
+      }, { passive: true });
+
+      function animateCursorRing() {
+        ringX += (mouseClientX - ringX) * 0.18;
+        ringY += (mouseClientY - ringY) * 0.18;
+        if (cursorRing) {
+          cursorRing.style.left = `${ringX}px`;
+          cursorRing.style.top = `${ringY}px`;
+        }
+        requestAnimationFrame(animateCursorRing);
+      }
+      if (!isMobile && !prefersReducedMotion) {
+        requestAnimationFrame(animateCursorRing);
+      }
+
+      // Expand custom cursor ring on interactive elements
+      document.querySelectorAll('a, button, .tilt-card, input, select').forEach((el) => {
+        el.addEventListener('mouseenter', () => {
+          if (cursorRing) cursorRing.classList.add('cursor-expanded');
+        });
+        el.addEventListener('mouseleave', () => {
+          if (cursorRing) cursorRing.classList.remove('cursor-expanded');
+        });
+      });
+
+      // Magnetic CTA Buttons
+      document.querySelectorAll('.magnetic-btn').forEach((btn) => {
+        btn.addEventListener('mousemove', (e) => {
+          if (prefersReducedMotion || isMobile) return;
+          const rect = btn.getBoundingClientRect();
+          const dx = e.clientX - (rect.left + rect.width / 2);
+          const dy = e.clientY - (rect.top + rect.height / 2);
+          btn.style.transform = `translate(${dx * 0.24}px, ${dy * 0.24}px)`;
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.transform = 'translate(0px, 0px)';
+        });
+      });
+
+      // Also track silver border illumination on Feature cards
+      document.querySelectorAll('.silver-card').forEach((card) => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          card.style.setProperty('--card-mouse-x', `${e.clientX - rect.left}px`);
+          card.style.setProperty('--card-mouse-y', `${e.clientY - rect.top}px`);
+        });
+      });
+
+      // =========================================================
+      // 10. MODAL SYSTEM (Get Started, Begin Journey & Card Inspect)
+      // =========================================================
+      const modal = document.getElementById('avaran-modal');
+      const modalCloseBtn = document.getElementById('modal-close-btn');
+      const modalTitle = document.getElementById('modal-title');
+      const modalDesc = document.getElementById('modal-desc');
+      const modalTag = document.getElementById('modal-tag');
+      const modalForm = document.getElementById('modal-access-form');
+      const modalSuccess = document.getElementById('modal-success-msg');
+      const modalSuccessDetail = document.getElementById('modal-success-detail');
+      const architectTier = document.getElementById('architect-tier');
+
+      const modalSpecs = {
+        'orbital-synthesis': {
+          tag: 'SYS // 01.A SPECIFICATION',
+          title: 'Cognitive Orbital Synthesis',
+          desc: 'Provision an autonomous multi-agent orbital mesh with 1.4 PB/s internal bandwidth and zero-entropy consensus routing.',
+          tier: 'Cognitive Orbital Synthesis'
+        },
+        'quantum-telemetry': {
+          tag: 'SYS // 02.B SPECIFICATION',
+          title: 'Astrolabe Spatial Telemetry',
+          desc: 'Deploy multi-planar spatial observability across distributed clusters with sub-millimeter anomaly isolation.',
+          tier: 'Astrolabe Spatial Telemetry'
+        },
+        'kinetic-morphogenesis': {
+          tag: 'SYS // 03.C SPECIFICATION',
+          title: 'Kinetic Continuum Engine',
+          desc: 'Activate fluid-mercury execution pipelines that dynamically balance high-density workloads across global regions.',
+          tier: 'Kinetic Continuum Engine'
+        },
+        'default': {
+          tag: 'ORBITAL INITIALIZATION',
+          title: 'Begin Your AVARAN Journey',
+          desc: 'Enter your institutional coordinates below to provision an isolated AVARAN node or schedule a private architectural briefing.',
+          tier: 'Full Sovereign Enterprise Cluster'
+        }
+      };
+
+      function openModal(specKey = 'default') {
+        if (!modal) return;
+        playUiChime(783.99);
+        const spec = modalSpecs[specKey] || modalSpecs.default;
+        if (modalTag) modalTag.textContent = spec.tag;
+        if (modalTitle) modalTitle.textContent = spec.title;
+        if (modalDesc) modalDesc.textContent = spec.desc;
+        if (architectTier) architectTier.value = spec.tier;
+
+        if (modalForm) modalForm.classList.remove('hidden');
+        if (modalSuccess) modalSuccess.classList.add('hidden');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        requestAnimationFrame(() => {
+          modal.classList.remove('opacity-0');
+          modal.classList.add('opacity-100');
+        });
+      }
+
+      function closeModal() {
+        if (!modal) return;
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }, 280);
+      }
+
+      // Wire buttons that open the modal
+      const navGetStartedBtn = document.getElementById('nav-get-started-btn');
+      const mobileGetStartedBtn = document.getElementById('mobile-get-started-btn');
+      const beginJourneyBtn = document.getElementById('begin-journey-btn');
+
+      if (navGetStartedBtn) navGetStartedBtn.addEventListener('click', () => openModal('default'));
+      if (mobileGetStartedBtn) {
+        mobileGetStartedBtn.addEventListener('click', () => {
+          setMobileDrawer(false);
+          openModal('default');
+        });
+      }
+      if (beginJourneyBtn) beginJourneyBtn.addEventListener('click', () => openModal('default'));
+
+      document.querySelectorAll('[data-modal-id]').forEach((card) => {
+        card.addEventListener('click', () => {
+          openModal(card.getAttribute('data-modal-id'));
+        });
+      });
+
+      if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeModal();
+        });
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+          setMobileDrawer(false);
+        }
+      });
+
+      if (modalForm) {
+        modalForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          playUiChime(880);
+          const name = document.getElementById('architect-name').value;
+          const tier = document.getElementById('architect-tier').value;
+          modalForm.classList.add('hidden');
+          if (modalSuccess) modalSuccess.classList.remove('hidden');
+          if (modalSuccessDetail) {
+            modalSuccessDetail.textContent = `NODE ASSIGNED FOR ${name.toUpperCase()} // [${tier.toUpperCase()}]`;
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

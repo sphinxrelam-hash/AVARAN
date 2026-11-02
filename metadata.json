@@ -1,0 +1,6 @@
+{
+  "name": "AVARAN — Orbital Intelligence & Architectural Synthesis",
+  "description": "Translucent orbital intelligence, generative spatial computing, and architectural synthesis for sovereign cognitive infrastructures.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
