@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useTransition } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import {
   Compass,
@@ -9,20 +9,33 @@ import {
   X,
   Check,
   Sparkles,
-  BarChart2,
-  GitMerge,
+  Shield,
   ShieldCheck,
-  Users,
+  ShieldAlert,
+  Lock,
+  Key,
+  Terminal,
+  Search,
+  FileText,
+  Database,
+  Server,
   Cpu,
   Layers,
   Activity,
   RotateCcw,
   Sliders,
-  Radio,
-  ExternalLink
+  AlertTriangle,
+  EyeOff,
+  Play,
+  Pause,
+  ChevronRight,
+  Fingerprint,
+  Box,
+  Binary,
+  HardDrive
 } from 'lucide-react';
 
-// Assets
+// Visual Assets
 const AVARAN_LOGO = '/assets/avaran_logo.webp';
 const CARD_ORBITAL = '/assets/card_orbital.webp';
 const CARD_GRID = '/assets/card_grid.webp';
@@ -35,40 +48,45 @@ interface ModalSpec {
   tier: string;
   throughput?: string;
   latency?: string;
+  mode: 'spec' | 'interactive_demo';
 }
 
 const MODAL_SPECS: Record<string, ModalSpec> = {
-  'orbital-synthesis': {
-    tag: 'SYS // 01.A SPECIFICATION',
-    title: 'Cognitive Orbital Synthesis',
-    desc: 'Provision an autonomous multi-agent orbital mesh with 1.4 PB/s internal bandwidth and zero-entropy consensus routing.',
-    tier: 'Cognitive Orbital Synthesis',
-    throughput: '1.4 PB/S',
-    latency: '0.04 ms'
+  'crypto-wasm': {
+    tag: 'SYS // CRYPTO-WASM',
+    title: 'C-to-WebAssembly Crypto Core',
+    desc: 'Memory-hard Argon2id key derivation, HKDF-SHA256 key isolation (Key_Auth vs Key_KEK), and explicit_bzero memory scrubbing directly in C/Wasm linear memory.',
+    tier: 'C/Wasm STREAM AEAD Enclave',
+    throughput: '3.2 GB/S IN-MEMORY',
+    latency: '< 0.02 ms / chunk',
+    mode: 'spec'
   },
-  'quantum-telemetry': {
-    tag: 'SYS // 02.B SPECIFICATION',
-    title: 'Astrolabe Spatial Telemetry',
-    desc: 'Deploy multi-planar spatial observability across distributed clusters with sub-millimeter anomaly isolation.',
-    tier: 'Astrolabe Spatial Telemetry',
-    throughput: '980 TB/S',
-    latency: '0.08 ms'
+  'vfs-padme': {
+    tag: 'SYS // VFS-PADMÉ',
+    title: 'Decoupled VFS & PADMÉ Obfuscation',
+    desc: 'Monolithic encrypted index decoupling metadata from physical storage. Uniform 4 MB STREAM AEAD blocks with PADMÉ padding cap overhead to ≤12% regardless of file size.',
+    tier: 'Monolithic PADMÉ Storage Fabric',
+    throughput: '4 MB Uniform Blocks',
+    latency: 'Zero Metadata Leaks',
+    mode: 'spec'
   },
-  'kinetic-morphogenesis': {
-    tag: 'SYS // 03.C SPECIFICATION',
-    title: 'Kinetic Continuum Engine',
-    desc: 'Activate fluid-mercury execution pipelines that dynamically balance high-density workloads across global regions.',
-    tier: 'Kinetic Continuum Engine',
-    throughput: '2.1 PB/S',
-    latency: '0.02 ms'
+  'webgpu-onnx': {
+    tag: 'SYS // WEBGPU-ONNX',
+    title: 'In-Browser Semantic Search & DLP',
+    desc: 'Isolated Web Worker computing 384-dimensional dense vector embeddings via WebGPU/ONNX and Shannon entropy scanning before a single ciphertext byte leaves the client.',
+    tier: 'Client WebGPU Vector Enclave',
+    throughput: '384-Dim Float Embeddings',
+    latency: '< 5 ms Cosine Similarity',
+    mode: 'interactive_demo'
   },
   default: {
-    tag: 'ORBITAL INITIALIZATION',
-    title: 'Begin Your AVARAN Journey',
-    desc: 'Enter your institutional coordinates below to provision an isolated AVARAN node or schedule a private architectural briefing.',
-    tier: 'Full Sovereign Enterprise Cluster',
-    throughput: 'Unlimited',
-    latency: '< 0.05 ms'
+    tag: 'ORBITAL PROVISIONING // ZERO-VAULT',
+    title: 'Initialize AVARAN Zero-Vault',
+    desc: 'Deploy an isolated zero-knowledge storage vault with client-side WebGPU vector intelligence and C-to-Wasm AEAD encryption.',
+    tier: 'Sovereign Zero-Vault Cluster',
+    throughput: 'Unlimited 4 MB Chunks',
+    latency: '< 5 ms Search / 0.00% Server View',
+    mode: 'interactive_demo'
   }
 };
 
@@ -76,7 +94,7 @@ export default function App() {
   // Preloader State
   const [preloaderFinished, setPreloaderFinished] = useState(false);
   const [preloaderPercent, setPreloaderPercent] = useState(0);
-  const [preloaderStage, setPreloaderStage] = useState('CONVERGING SILVER PARTICLES');
+  const [preloaderStage, setPreloaderStage] = useState('ALLOCATING WASM LINEAR MEMORY');
 
   // Sound Engine State
   const [isSoundPlaying, setIsSoundPlaying] = useState(false);
@@ -86,7 +104,7 @@ export default function App() {
   // 3D Sculpture Interactive State
   const [speedMultiplier, setSpeedMultiplier] = useState(1.0);
   const [ringExpansion, setRingExpansion] = useState(100);
-  const [hudState, setHudState] = useState('ORBITAL FIELD // INTERACTIVE');
+  const [hudState, setHudState] = useState('VFS INDEX // SEALED IN WASM MEMORY');
   const [isLuminosityAmplified, setIsLuminosityAmplified] = useState(false);
 
   // Scroll & Nav State
@@ -95,8 +113,12 @@ export default function App() {
   const [isNavScrolled, setIsNavScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Domain Filter State in Explore Section
-  const [activeDomainFilter, setActiveDomainFilter] = useState<'all' | 'neural' | 'spatial' | 'kinetic'>('all');
+  // 5-Stage Pipeline Interactive State
+  const [activeStage, setActiveStage] = useState<number>(1);
+  const [isPipelinePlaying, setIsPipelinePlaying] = useState<boolean>(false);
+
+  // Defense Matrix Active Tab
+  const [activeDefenseTab, setActiveDefenseTab] = useState<number>(1);
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -104,18 +126,15 @@ export default function App() {
   const [modalSuccess, setModalSuccess] = useState(false);
   const [architectName, setArchitectName] = useState('');
   const [architectEmail, setArchitectEmail] = useState('');
-  const [selectedTier, setSelectedTier] = useState('Cognitive Orbital Synthesis');
+  const [selectedTier, setSelectedTier] = useState('Sovereign Zero-Vault Cluster');
 
-  // Contact Form State
-  const [contactSuccess, setContactSuccess] = useState(false);
-  const [contactSubmitting, setContactSubmitting] = useState(false);
-  const [contactForm, setContactForm] = useState({
-    name: '',
-    email: '',
-    tier: 'Cognitive Orbital Synthesis',
-    region: 'Orbital Low-Earth (LEO-Mesh)',
-    notes: ''
-  });
+  // Interactive Client-Side DLP & Vector Search Demo State
+  const [demoInput, setDemoInput] = useState('Tax invoice and Q1 financial audit from March 2026');
+  const [demoEntropy, setDemoEntropy] = useState<number>(4.12);
+  const [demoSecretDetected, setDemoSecretDetected] = useState<string | null>(null);
+  const [demoWebAuthnTriggered, setDemoWebAuthnTriggered] = useState<boolean>(false);
+  const [demoCosineSim, setDemoCosineSim] = useState<number>(0.942);
+  const [demoChunkCount, setDemoChunkCount] = useState<number>(1);
 
   // Custom Cursor Refs
   const cursorDotRef = useRef<HTMLDivElement>(null);
@@ -125,7 +144,6 @@ export default function App() {
   // Canvas Refs
   const webglCanvasRef = useRef<HTMLCanvasElement>(null);
   const preloaderCanvasRef = useRef<HTMLCanvasElement>(null);
-  const philosophyCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Three.js Shared Controller Object
   const threeCtrlRef = useRef({
@@ -138,11 +156,57 @@ export default function App() {
     speedMultiplier: 1.0,
     ringExpansion: 1.0,
     scrollProgress: 0,
-    sectionOffsetX: 2.1,
+    sectionOffsetX: 2.2,
     sectionScale: 1.0
   });
 
-  // Keep Three.js controller in sync with state
+  // Calculate live Shannon Entropy for the demo input
+  useEffect(() => {
+    if (!demoInput) {
+      setDemoEntropy(0);
+      setDemoSecretDetected(null);
+      setDemoWebAuthnTriggered(false);
+      return;
+    }
+    const freq: Record<string, number> = {};
+    for (const char of demoInput) {
+      freq[char] = (freq[char] || 0) + 1;
+    }
+    const len = demoInput.length;
+    let ent = 0;
+    for (const count of Object.values(freq)) {
+      const p = count / len;
+      ent -= p * Math.log2(p);
+    }
+    setDemoEntropy(parseFloat(ent.toFixed(2)));
+
+    // Detect high entropy secret patterns
+    const isAwsKey = /AKIA[0-9A-Z]{16}|wJalrXUtnFEMI/i.test(demoInput);
+    const isSshKey = /-----BEGIN (RSA|OPENSSH) PRIVATE KEY-----/i.test(demoInput);
+    const isEnvSecret = /SECRET_KEY|DATABASE_PASSWORD|API_TOKEN=/i.test(demoInput);
+
+    if (isAwsKey) {
+      setDemoSecretDetected('AWS Access / Secret Key Pattern');
+      setDemoWebAuthnTriggered(true);
+    } else if (isSshKey) {
+      setDemoSecretDetected('OpenSSH / RSA Private Key Detected');
+      setDemoWebAuthnTriggered(true);
+    } else if (isEnvSecret || ent > 4.85) {
+      setDemoSecretDetected('High-Entropy Secret / .env Credentials');
+      setDemoWebAuthnTriggered(true);
+    } else {
+      setDemoSecretDetected(null);
+      setDemoWebAuthnTriggered(false);
+    }
+
+    // Compute mock 384-dim similarity
+    const hashVal = demoInput.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    const sim = 0.75 + (hashVal % 25) / 100;
+    setDemoCosineSim(parseFloat(sim.toFixed(3)));
+    setDemoChunkCount(Math.max(1, Math.ceil(demoInput.length / (4 * 1024))));
+  }, [demoInput]);
+
+  // Synchronize Three.js controls
   useEffect(() => {
     threeCtrlRef.current.speedMultiplier = speedMultiplier;
   }, [speedMultiplier]);
@@ -150,6 +214,36 @@ export default function App() {
   useEffect(() => {
     threeCtrlRef.current.ringExpansion = ringExpansion / 100;
   }, [ringExpansion]);
+
+  // 5-Stage Pipeline Autoplay
+  useEffect(() => {
+    if (!isPipelinePlaying) return;
+    const timer = setInterval(() => {
+      setActiveStage((prev) => (prev >= 5 ? 1 : prev + 1));
+      playUiChime(580 + (activeStage % 5) * 80);
+    }, 3800);
+    return () => clearInterval(timer);
+  }, [isPipelinePlaying, activeStage]);
+
+  // Update Three.js parameters based on pipeline stage
+  useEffect(() => {
+    if (activeStage === 1) {
+      setSpeedMultiplier(0.8);
+      setRingExpansion(90);
+    } else if (activeStage === 2) {
+      setSpeedMultiplier(1.4);
+      setRingExpansion(115);
+    } else if (activeStage === 3) {
+      setSpeedMultiplier(2.2);
+      setRingExpansion(140);
+    } else if (activeStage === 4) {
+      setSpeedMultiplier(1.6);
+      setRingExpansion(105);
+    } else if (activeStage === 5) {
+      setSpeedMultiplier(0.9);
+      setRingExpansion(80);
+    }
+  }, [activeStage]);
 
   // ==========================================
   // 1. WEB AUDIO AMBIENT SOUND ENGINE
@@ -166,7 +260,7 @@ export default function App() {
       audioCtxRef.current = ctx;
       masterGainRef.current = gain;
 
-      // Deep harmonic drone oscillators (A2 + E3 + C#4 cosmic chords)
+      // Harmonic drone oscillators (A2 + E3 + C#4 cryptographic frequencies)
       const freqs = [110, 164.81, 220, 277.18];
       freqs.forEach((f, idx) => {
         const osc = ctx.createOscillator();
@@ -176,7 +270,7 @@ export default function App() {
 
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(340, ctx.currentTime);
+        filter.frequency.setValueAtTime(320, ctx.currentTime);
 
         oscGain.gain.setValueAtTime(0.035 / (idx + 1), ctx.currentTime);
         osc.connect(filter);
@@ -185,7 +279,7 @@ export default function App() {
         osc.start();
       });
     } catch {
-      // Audio context not supported or user blocked
+      // Audio not supported
     }
   };
 
@@ -222,7 +316,7 @@ export default function App() {
     const next = !isSoundPlaying;
     setIsSoundPlaying(next);
     if (next) {
-      gain.gain.exponentialRampToValueAtTime(0.28, ctx.currentTime + 0.8);
+      gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.8);
       playUiChime(660);
     } else {
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
@@ -241,7 +335,7 @@ export default function App() {
 
     const canvas = preloaderCanvasRef.current;
     let animId: number;
-    let startTime = performance.now();
+    const startTime = performance.now();
 
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -290,7 +384,7 @@ export default function App() {
       animId = requestAnimationFrame(render);
     }
 
-    const duration = 2400; // 2.4s
+    const duration = 2200;
     const interval = 25;
     const step = 100 / (duration / interval);
     let current = 0;
@@ -299,19 +393,21 @@ export default function App() {
       current = Math.min(100, current + step);
       setPreloaderPercent(Math.round(current));
 
-      if (current < 35) {
-        setPreloaderStage('CONVERGING SILVER PARTICLES');
-      } else if (current < 70) {
-        setPreloaderStage('FORMING ORBITAL STRUCTURE');
+      if (current < 30) {
+        setPreloaderStage('ALLOCATING WASM LINEAR MEMORY');
+      } else if (current < 65) {
+        setPreloaderStage('DERIVING ARGON2ID + HKDF KEYS');
+      } else if (current < 92) {
+        setPreloaderStage('MOUNTING ENCRYPTED VFS INDEX');
       } else {
-        setPreloaderStage('MATERIALIZING AVARAN CORE');
+        setPreloaderStage('ENTERING AVARAN // ZERO-VAULT');
       }
 
       if (current >= 100) {
         clearInterval(timer);
         setTimeout(() => {
           setPreloaderFinished(true);
-        }, 400);
+        }, 350);
       }
     }, interval);
 
@@ -392,26 +488,26 @@ export default function App() {
         // Hero: on the right
         threeCtrlRef.current.sectionOffsetX = 2.25;
         threeCtrlRef.current.sectionScale = 1.0;
-      } else if (prog < 0.42) {
-        // Philosophy: Centered
+      } else if (prog < 0.38) {
+        // Deadlock / Philosophy: Centered
         threeCtrlRef.current.sectionOffsetX = 0;
-        threeCtrlRef.current.sectionScale = 1.22;
-      } else if (prog < 0.62) {
-        // Explore: Shifted left
-        threeCtrlRef.current.sectionOffsetX = -2.4;
-        threeCtrlRef.current.sectionScale = 0.85;
+        threeCtrlRef.current.sectionScale = 1.25;
+      } else if (prog < 0.60) {
+        // Architecture / 3 Pillars: Shifted left
+        threeCtrlRef.current.sectionOffsetX = -2.35;
+        threeCtrlRef.current.sectionScale = 0.88;
       } else if (prog < 0.82) {
-        // Experience: Positioned right-center
-        threeCtrlRef.current.sectionOffsetX = 1.45;
-        threeCtrlRef.current.sectionScale = 1.15;
+        // Pipeline: Positioned right-center
+        threeCtrlRef.current.sectionOffsetX = 1.6;
+        threeCtrlRef.current.sectionScale = 1.18;
       } else {
-        // Contact: Centered grand alignment
+        // Defense / Final CTA: Centered alignment
         threeCtrlRef.current.sectionOffsetX = 0;
-        threeCtrlRef.current.sectionScale = 1.08;
+        threeCtrlRef.current.sectionScale = 1.05;
       }
 
       // Active Section Spy
-      const sectionIds = ['home', 'about', 'explore', 'experience', 'features', 'contact'];
+      const sectionIds = ['home', 'deadlock', 'architecture', 'pipeline', 'defense', 'vault'];
       for (const id of sectionIds) {
         const el = document.getElementById(id);
         if (el) {
@@ -428,7 +524,6 @@ export default function App() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Smooth scroll handler
   const scrollTo = (id: string) => {
     playUiChime(587.33);
     setMobileMenuOpen(false);
@@ -508,7 +603,6 @@ export default function App() {
       mesh.rotation.set(cfg.rotX, cfg.rotY, 0);
       ribbonGroup.add(mesh);
 
-      // Subtle wireframe edge highlight
       const wireMat = new THREE.MeshBasicMaterial({
         color: 0xf2f0eb,
         transparent: true,
@@ -537,7 +631,6 @@ export default function App() {
       const ringMesh = new THREE.Mesh(torusGeom, ringMat);
       ringMesh.rotation.set((idx * Math.PI) / 5 + 0.3, (idx * Math.PI) / 4, idx * 0.2);
 
-      // Node sphere along ring
       const nodeGeom = new THREE.SphereGeometry(0.042, 12, 12);
       const nodeMat = new THREE.MeshBasicMaterial({ color: 0xf2f0eb });
       const nodeMesh = new THREE.Mesh(nodeGeom, nodeMat);
@@ -547,8 +640,8 @@ export default function App() {
       ringsGroup.add(ringMesh);
     });
 
-    // Group 3: Floating Cosmic Dust
-    const particleCount = isMobile ? 200 : 500;
+    // Group 3: Floating Cryptographic Particles
+    const particleCount = isMobile ? 220 : 520;
     const particleGeom = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount; i++) {
@@ -570,7 +663,7 @@ export default function App() {
     const particleCloud = new THREE.Points(particleGeom, particleMat);
     rootGroup.add(particleCloud);
 
-    // Atmospheric Studio Lighting
+    // Studio Lighting
     const ambientLight = new THREE.AmbientLight(0xc5c6cb, 0.8);
     scene.add(ambientLight);
     const keyLight = new THREE.PointLight(0xf2f0eb, 2.6, 25);
@@ -596,7 +689,6 @@ export default function App() {
       const elapsed = clock.getElapsedTime();
       const ctrl = threeCtrlRef.current;
 
-      // Smooth hover interpolation
       ctrl.hoverIntensity += (ctrl.targetHoverIntensity - ctrl.hoverIntensity) * 0.06;
       keyLight.intensity = 2.6 + ctrl.hoverIntensity * 2.2;
 
@@ -609,33 +701,27 @@ export default function App() {
 
       const speed = ctrl.speedMultiplier * (1 + ctrl.hoverIntensity * 0.45);
 
-      // Rotate ribbons
       ribbonGroup.rotation.y += delta * 0.24 * speed;
       ribbonGroup.rotation.x = Math.sin(elapsed * 0.35) * 0.25 + ctrl.scrollProgress * Math.PI * 1.4;
       ribbonGroup.rotation.z += delta * 0.1 * speed;
 
-      // Rotate rings
       ringsGroup.children.forEach((ring, i) => {
         const dir = i % 2 === 0 ? 1 : -1;
         ring.rotation.z += delta * (0.14 + i * 0.04) * dir * speed;
         ring.rotation.x += delta * 0.08 * dir * speed;
       });
 
-      // Scale rings from state & scroll
       const ringScale = ctrl.ringExpansion * (1 + Math.sin(ctrl.scrollProgress * Math.PI * 2) * 0.12);
       ringsGroup.scale.setScalar(ringScale);
 
-      // Particle rotation
       particleCloud.rotation.y -= delta * 0.05 * speed;
       particleCloud.rotation.x = ctrl.scrollProgress * 0.8;
 
-      // Mouse Parallax Influence
       ctrl.targetRotY = ctrl.mouseX * 0.45;
       ctrl.targetRotX = ctrl.mouseY * 0.35;
       rootGroup.rotation.y += (ctrl.targetRotY - rootGroup.rotation.y) * 0.05;
       rootGroup.rotation.x += (ctrl.targetRotX - rootGroup.rotation.x) * 0.05;
 
-      // Position & scale smooth lerp
       rootGroup.position.x += (ctrl.sectionOffsetX - rootGroup.position.x) * 0.06;
       const currentScale = rootGroup.scale.x;
       const nextScale = currentScale + (ctrl.sectionScale - currentScale) * 0.06;
@@ -650,71 +736,6 @@ export default function App() {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', onResize);
       renderer.dispose();
-    };
-  }, []);
-
-  // ==========================================
-  // 6. PHILOSOPHY MOVING GEOMETRIC CANVAS
-  // ==========================================
-  useEffect(() => {
-    const canvas = philosophyCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let pw = (canvas.width = window.innerWidth);
-    let ph = (canvas.height = window.innerHeight);
-    const isMobile = window.innerWidth < 768;
-    const nodes = Array.from({ length: isMobile ? 18 : 34 }, () => ({
-      x: Math.random() * pw,
-      y: Math.random() * ph,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35
-    }));
-
-    const onResize = () => {
-      pw = canvas.width = window.innerWidth;
-      ph = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', onResize);
-
-    let animId: number;
-    const render = () => {
-      ctx.clearRect(0, 0, pw, ph);
-      nodes.forEach((n, idx) => {
-        n.x += n.vx;
-        n.y += n.vy;
-        if (n.x < 0 || n.x > pw) n.vx *= -1;
-        if (n.y < 0 || n.y > ph) n.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(197, 198, 203, 0.35)';
-        ctx.fill();
-
-        for (let j = idx + 1; j < nodes.length; j++) {
-          const m = nodes[j];
-          const dx = n.x - m.x;
-          const dy = n.y - m.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 190) {
-            ctx.beginPath();
-            ctx.moveTo(n.x, n.y);
-            ctx.lineTo(m.x, m.y);
-            ctx.strokeStyle = `rgba(197, 198, 203, ${(1 - dist / 190) * 0.14})`;
-            ctx.lineWidth = 0.7;
-            ctx.stroke();
-          }
-        }
-      });
-      animId = requestAnimationFrame(render);
-    };
-
-    animId = requestAnimationFrame(render);
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', onResize);
     };
   }, []);
 
@@ -749,23 +770,10 @@ export default function App() {
     setModalOpen(true);
   };
 
-  // Modal Submit
   const handleModalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     playUiChime(880);
     setModalSuccess(true);
-  };
-
-  // Contact Form Submit
-  const handleContactSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setContactSubmitting(true);
-    playUiChime(783.99);
-    setTimeout(() => {
-      setContactSubmitting(false);
-      setContactSuccess(true);
-      playUiChime(880);
-    }, 600);
   };
 
   return (
@@ -802,7 +810,7 @@ export default function App() {
           />
         </div>
         <span className="text-[9px] tracking-[0.32em] text-[#85868B]/60 uppercase [writing-mode:vertical-rl] rotate-180">
-          ORBITAL SYNC
+          ZERO-VAULT SYNC
         </span>
       </div>
 
@@ -814,7 +822,7 @@ export default function App() {
       />
 
       {/* ========================================== */}
-      {/* 1. CINEMATIC PRELOADER                      */}
+      {/* LOADING SCREEN WITH CRYPTO ALLOCATIONS     */}
       {/* ========================================== */}
       {!preloaderFinished && (
         <div
@@ -846,7 +854,7 @@ export default function App() {
                 <div className="absolute inset-0 rounded-full bg-[#C5C6CB]/10 blur-2xl" />
                 <img
                   src={AVARAN_LOGO}
-                  alt="AVARAN Emblem"
+                  alt="AVARAN Zero-Vault"
                   className="w-36 h-36 object-contain logo-blend relative z-10"
                 />
               </div>
@@ -855,7 +863,7 @@ export default function App() {
             {/* Status & Counter */}
             <div className="mt-8 text-center">
               <p className="font-['Cinzel',serif] text-xs sm:text-sm tracking-[0.38em] text-[#F2F0EB]">
-                ENTERING AVARAN
+                INITIALIZING AVARAN // ZERO-VAULT
               </p>
               <div className="mt-3 flex items-center justify-center gap-3 text-[10px] font-mono tracking-widest text-[#85868B]">
                 <span>{preloaderStage}</span>
@@ -864,7 +872,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Skip Intro Button */}
+          {/* Skip Sequence Button */}
           <button
             type="button"
             onClick={skipPreloader}
@@ -886,7 +894,7 @@ export default function App() {
             isNavScrolled ? 'glass-panel shadow-[0_10px_40px_rgba(0,0,0,0.85)]' : 'border-transparent'
           }`}
         >
-          {/* Zone 1: Single element brand wordmark with logo */}
+          {/* Zone 1: Single element brand wordmark */}
           <a
             href="#home"
             onClick={(e) => {
@@ -905,11 +913,11 @@ export default function App() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="font-['Cinzel',serif] text-lg sm:text-xl tracking-[0.26em] text-[#F2F0EB] font-medium leading-none">
-                AVARAN
+              <span className="font-['Cinzel',serif] text-base sm:text-lg tracking-[0.24em] text-[#F2F0EB] font-medium leading-none">
+                AVARAN // ZERO-VAULT
               </span>
-              <span className="text-[9px] tracking-[0.28em] text-[#85868B] uppercase mt-1">
-                ORBITAL NEXUS
+              <span className="text-[9px] tracking-[0.26em] text-[#85868B] uppercase mt-1">
+                MATHEMATICALLY BLIND CLOUD
               </span>
             </div>
           </a>
@@ -917,15 +925,14 @@ export default function App() {
           {/* Zone 2: 5 clean single-line navigation links */}
           <nav
             aria-label="Primary Navigation"
-            className="hidden md:flex items-center gap-7 lg:gap-9 text-xs tracking-[0.18em] uppercase font-medium"
+            className="hidden md:flex items-center gap-6 lg:gap-8 text-xs tracking-[0.16em] uppercase font-medium"
           >
             {[
               { id: 'home', label: 'Home' },
-              { id: 'about', label: 'Philosophy' },
-              { id: 'explore', label: 'Explore' },
-              { id: 'experience', label: 'Experience' },
-              { id: 'features', label: 'Features' },
-              { id: 'contact', label: 'Contact' }
+              { id: 'deadlock', label: 'Deadlock' },
+              { id: 'pipeline', label: 'Pipeline' },
+              { id: 'defense', label: 'Defense Matrix' },
+              { id: 'architecture', label: 'Architecture' }
             ].map((link) => (
               <a
                 key={link.id}
@@ -943,59 +950,59 @@ export default function App() {
             ))}
           </nav>
 
-          {/* Zone 3: 1 primary action & controls */}
+          {/* Zone 3: 1 primary action & sound controls */}
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-            {/* Ambient Sound Synthesizer Toggle */}
+            {/* Ambient Sound Toggle */}
             <button
               type="button"
               onClick={toggleSound}
               onMouseEnter={() => setCursorExpanded(true)}
               onMouseLeave={() => setCursorExpanded(false)}
               aria-pressed={isSoundPlaying}
-              aria-label="Toggle Ambient Soundscape"
-              className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full border text-[11px] tracking-widest uppercase transition-all cursor-pointer ${
+              aria-label="Toggle Ambient Cryptographic Soundscape"
+              className={`flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full border text-[10px] tracking-widest uppercase transition-all cursor-pointer ${
                 isSoundPlaying
                   ? 'border-[#F2F0EB] bg-[#111214] text-[#F2F0EB] sound-active'
                   : 'border-[#C5C6CB]/20 bg-[#111214]/70 text-[#A7A7AD] hover:border-[#C5C6CB]/50 hover:text-[#F2F0EB]'
               }`}
             >
-              <div className="flex items-end gap-[2px] h-3.5">
+              <div className="flex items-end gap-[2px] h-3">
                 <span className="sound-bar sound-bar-1 h-1" />
                 <span className="sound-bar sound-bar-2 h-1.5" />
                 <span className="sound-bar sound-bar-3 h-1" />
                 <span className="sound-bar sound-bar-4 h-1" />
               </div>
-              <span className="hidden sm:inline text-[10px] whitespace-nowrap">
+              <span className="hidden sm:inline whitespace-nowrap">
                 {isSoundPlaying ? 'Audio On' : 'Audio Off'}
               </span>
             </button>
 
-            {/* Get Started CTA */}
+            {/* Initialize Vault CTA */}
             <button
               type="button"
               onClick={() => openModalWithSpec('default')}
               onMouseEnter={() => setCursorExpanded(true)}
               onMouseLeave={() => setCursorExpanded(false)}
-              className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#F2F0EB] via-[#C5C6CB] to-[#F2F0EB] text-[#050505] font-medium text-xs tracking-[0.16em] uppercase shadow-[0_0_25px_rgba(197,198,203,0.25)] hover:shadow-[0_0_35px_rgba(242,240,235,0.5)] transition-all whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#F2F0EB] via-[#C5C6CB] to-[#F2F0EB] text-[#050505] font-medium text-xs tracking-[0.16em] uppercase shadow-[0_0_25px_rgba(197,198,203,0.25)] hover:shadow-[0_0_35px_rgba(242,240,235,0.5)] transition-all whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <span>Begin Journey</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span>Initialize Vault</span>
+              <Lock className="w-3.5 h-3.5" />
             </button>
 
-            {/* Mobile Hamburger Button */}
+            {/* Mobile Hamburger */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open navigation menu"
-              className="md:hidden w-10 h-10 rounded-full border border-[#C5C6CB]/25 bg-[#111214]/80 flex items-center justify-center text-[#F2F0EB] hover:border-[#F2F0EB] transition-colors"
+              className="md:hidden w-9 h-9 rounded-full border border-[#C5C6CB]/25 bg-[#111214]/80 flex items-center justify-center text-[#F2F0EB]"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Animated Fullscreen Drawer */}
+      {/* Mobile Drawer */}
       <div
         className={`fixed inset-0 z-[80] bg-[#050505]/95 backdrop-blur-2xl transition-opacity duration-500 flex flex-col justify-between p-8 ${
           mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -1003,14 +1010,16 @@ export default function App() {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={AVARAN_LOGO} alt="AVARAN" className="w-9 h-9 object-contain logo-blend" />
-            <span className="font-['Cinzel',serif] text-lg tracking-[0.26em] text-[#F2F0EB]">AVARAN</span>
+            <img src={AVARAN_LOGO} alt="AVARAN" className="w-8 h-8 object-contain logo-blend" />
+            <span className="font-['Cinzel',serif] text-base tracking-[0.24em] text-[#F2F0EB]">
+              AVARAN // ZERO-VAULT
+            </span>
           </div>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Close navigation menu"
-            className="w-10 h-10 rounded-full border border-[#C5C6CB]/25 flex items-center justify-center text-[#F2F0EB] hover:border-[#F2F0EB]"
+            className="w-10 h-10 rounded-full border border-[#C5C6CB]/25 flex items-center justify-center text-[#F2F0EB]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -1019,11 +1028,11 @@ export default function App() {
         <nav className="flex flex-col gap-6 my-auto">
           {[
             { id: 'home', label: '01. Home' },
-            { id: 'about', label: '02. Philosophy' },
-            { id: 'explore', label: '03. Explore' },
-            { id: 'experience', label: '04. Experience' },
-            { id: 'features', label: '05. Features' },
-            { id: 'contact', label: '06. Contact' }
+            { id: 'deadlock', label: '02. The Deadlock' },
+            { id: 'pipeline', label: '03. Blind Pipeline' },
+            { id: 'defense', label: '04. Defense Matrix' },
+            { id: 'architecture', label: '05. Architecture' },
+            { id: 'vault', label: '06. Deploy Vault' }
           ].map((item) => (
             <a
               key={item.id}
@@ -1032,7 +1041,7 @@ export default function App() {
                 e.preventDefault();
                 scrollTo(item.id);
               }}
-              className="font-['Cinzel',serif] text-2xl sm:text-3xl tracking-[0.18em] text-[#F2F0EB] hover:text-[#C5C6CB] transition-colors"
+              className="font-['Cinzel',serif] text-2xl tracking-[0.16em] text-[#F2F0EB] hover:text-[#C5C6CB]"
             >
               {item.label}
             </a>
@@ -1040,7 +1049,7 @@ export default function App() {
         </nav>
 
         <div className="pt-6 border-t border-[#242528] flex items-center justify-between">
-          <span className="text-xs tracking-widest uppercase text-[#85868B]">SYS // AVARAN 4.2</span>
+          <span className="text-xs font-mono text-[#85868B]">C-WASM · WEBGPU · STREAM AEAD</span>
           <button
             type="button"
             onClick={() => {
@@ -1049,7 +1058,7 @@ export default function App() {
             }}
             className="px-6 py-2.5 rounded-full bg-[#F2F0EB] text-[#050505] text-xs font-medium tracking-widest uppercase"
           >
-            Begin Journey
+            Deploy
           </button>
         </div>
       </div>
@@ -1063,7 +1072,7 @@ export default function App() {
           id="home"
           className="relative min-h-screen w-full flex items-center pt-28 pb-16 px-4 sm:px-8 lg:px-14 overflow-hidden"
         >
-          {/* Subtle Geometric Background Overlay Lines */}
+          {/* Subtle Geometric Background Grid Lines */}
           <div className="absolute inset-0 pointer-events-none opacity-20">
             <div className="max-w-7xl mx-auto h-full relative">
               <div className="absolute top-1/4 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5C6CB]/15 to-transparent" />
@@ -1074,96 +1083,115 @@ export default function App() {
           <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center relative z-10">
             {/* Left Column: Typography & CTAs */}
             <div className="lg:col-span-7 flex flex-col items-start text-left">
-              {/* Unboxed Metadata Tag */}
-              <div className="inline-flex items-center gap-3 text-xs text-[#85868B] mb-7 font-mono tracking-wider">
-                <span className="text-[#F2F0EB] font-medium">SOVEREIGN COMPUTING</span>
+              {/* Eyebrow Badge */}
+              <div className="inline-flex items-center gap-3 text-xs text-[#85868B] mb-5 font-mono tracking-wider">
+                <span className="text-[#F2F0EB] font-medium">ZERO-KNOWLEDGE</span>
                 <span aria-hidden="true">·</span>
-                <span>LATITUDE 00° ORBIT</span>
+                <span>WASM AEAD</span>
                 <span aria-hidden="true">·</span>
-                <span className="text-[#C5C6CB]">MULTI-AGENT FABRIC</span>
+                <span className="text-[#C5C6CB]">IN-BROWSER AI</span>
+              </div>
+
+              {/* Engineering Stack Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#C5C6CB]/15 bg-[#111214]/60 text-[10px] font-mono text-[#85868B] mb-6 max-w-xl flex-wrap">
+                <Terminal className="w-3.5 h-3.5 text-[#C5C6CB]" />
+                <span className="text-[#C5C6CB]">React + Vite (Workers)</span>
+                <span>·</span>
+                <span className="text-[#F2F0EB]">C → Wasm (Crypto Core)</span>
+                <span>·</span>
+                <span className="text-[#C5C6CB]">ONNX / WebGPU</span>
+                <span>·</span>
+                <span className="text-[#85868B]">FastAPI (Blind Pipe)</span>
               </div>
 
               {/* Main Headline */}
-              <h1 className="font-['Cinzel',serif] text-4xl sm:text-6xl xl:text-[4.25rem] leading-[1.08] tracking-tight font-normal text-[#F2F0EB] mb-7 max-w-2xl text-balance">
-                Orbital Intelligence &amp; <span className="silver-gradient-text font-semibold">Architectural</span> Synthesis
+              <h1 className="font-['Cinzel',serif] text-4xl sm:text-6xl xl:text-[4.15rem] leading-[1.08] tracking-tight font-normal text-[#F2F0EB] mb-7 max-w-2xl text-balance">
+                <span className="silver-gradient-text font-semibold">Searchable</span> Like the Cloud. <br />
+                <span className="silver-gradient-text font-semibold">Blind Like an Air-Gapped Drive.</span>
               </h1>
 
-              {/* Supporting Prose */}
-              <p className="text-[#A7A7AD] text-base sm:text-lg leading-relaxed max-w-xl font-light mb-10">
-                Enter a living architectural intelligence where sovereign data streams, predictive computation,
-                and autonomous spatial design converge into a singular orbital ecosystem.
+              {/* Supporting Description */}
+              <p className="text-[#A7A7AD] text-base sm:text-lg leading-relaxed max-w-xl font-light mb-9">
+                AVARAN Zero-Vault combines a custom C-to-WebAssembly cryptographic core with isolated in-browser
+                WebGPU intelligence. Encrypt, semantically search, and scan files for sensitive secrets entirely on the
+                client—before a single uniform ciphertext byte ever reaches our untrusted cloud pipe.
               </p>
 
               {/* Primary Actions */}
               <div className="flex flex-wrap items-center gap-4 sm:gap-5">
                 <button
                   type="button"
-                  onClick={() => scrollTo('explore')}
+                  onClick={() => openModalWithSpec('default')}
                   onMouseEnter={() => setCursorExpanded(true)}
                   onMouseLeave={() => setCursorExpanded(false)}
                   className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#F2F0EB] text-[#050505] font-medium text-xs sm:text-sm tracking-[0.2em] uppercase overflow-hidden shadow-[0_0_40px_rgba(242,240,235,0.28)] hover:shadow-[0_0_55px_rgba(242,240,235,0.55)] transition-all cursor-pointer"
                 >
-                  <span className="relative z-10">Explore AVARAN</span>
-                  <Compass className="w-4 h-4 relative z-10 group-hover:rotate-45 transition-transform duration-500" />
+                  <span className="relative z-10">Deploy Zero-Vault</span>
+                  <Lock className="w-4 h-4 relative z-10 group-hover:scale-110 transition-transform" />
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => scrollTo('about')}
+                  onClick={() => scrollTo('defense')}
                   onMouseEnter={() => setCursorExpanded(true)}
                   onMouseLeave={() => setCursorExpanded(false)}
                   className="group inline-flex items-center gap-3 px-8 py-4 rounded-full border border-[#C5C6CB]/30 bg-[#111214]/60 hover:bg-[#242528]/70 hover:border-[#F2F0EB]/60 text-[#F2F0EB] font-medium text-xs sm:text-sm tracking-[0.2em] uppercase backdrop-blur-md transition-all cursor-pointer"
                 >
-                  <span>Discover Philosophy</span>
-                  <ArrowDownRight className="w-4 h-4 text-[#C5C6CB] group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-transform" />
+                  <span>Inspect Threat Matrix</span>
+                  <ShieldCheck className="w-4 h-4 text-[#C5C6CB] group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </div>
 
-              {/* Geometric Telemetry Strip */}
-              <div className="mt-14 pt-8 border-t border-[#C5C6CB]/15 w-full max-w-xl grid grid-cols-3 gap-6">
+              {/* Hero Telemetry Strip */}
+              <div className="mt-12 pt-8 border-t border-[#C5C6CB]/15 w-full max-w-xl grid grid-cols-3 gap-6">
                 <div>
-                  <div className="text-[10px] font-mono tracking-widest uppercase text-[#85868B]">LATENCY CORE</div>
+                  <div className="text-[10px] font-mono tracking-widest uppercase text-[#85868B]">BLIND SEARCH LATENCY</div>
                   <div className="font-['Cinzel',serif] text-xl sm:text-2xl text-[#F2F0EB] mt-1 tabular-nums">
-                    0.04 <span className="text-xs text-[#C5C6CB]">ms</span>
+                    &lt; 5 <span className="text-xs text-[#C5C6CB]">ms</span>
                   </div>
+                  <div className="text-[9px] font-mono text-[#85868B] mt-0.5">384-dim in C/Wasm</div>
                 </div>
+
                 <div>
-                  <div className="text-[10px] font-mono tracking-widest uppercase text-[#85868B]">ORBITAL NODES</div>
+                  <div className="text-[10px] font-mono tracking-widest uppercase text-[#85868B]">BLOCK OBFUSCATION</div>
                   <div className="font-['Cinzel',serif] text-xl sm:text-2xl text-[#F2F0EB] mt-1 tabular-nums">
-                    12,840
+                    4 <span className="text-xs text-[#C5C6CB]">MB Chunks</span>
                   </div>
+                  <div className="text-[9px] font-mono text-[#85868B] mt-0.5">PADMÉ ≤12% cap</div>
                 </div>
+
                 <div>
-                  <div className="text-[10px] font-mono tracking-widest uppercase text-[#85868B]">INTEGRITY</div>
+                  <div className="text-[10px] font-mono tracking-widest uppercase text-[#85868B]">SERVER VISIBILITY</div>
                   <div className="font-['Cinzel',serif] text-xl sm:text-2xl text-[#F2F0EB] mt-1 tabular-nums">
-                    99.998<span className="text-xs text-[#C5C6CB]">%</span>
+                    0.00<span className="text-xs text-[#C5C6CB]">%</span>
                   </div>
+                  <div className="text-[9px] font-mono text-[#85868B] mt-0.5">Zero Plaintext / Keys</div>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Interactive 3D Orbital Hitbox Stage */}
+            {/* Right Column: 3D Interactive Stage & Alignment HUD */}
             <div className="lg:col-span-5 relative flex items-center justify-center min-h-[420px] sm:min-h-[520px]">
               <div
                 role="region"
-                aria-label="Interactive 3D AVARAN Orbital Sculpture"
+                aria-label="Interactive 3D AVARAN Zero-Vault Orbital Sculpture"
                 tabIndex={0}
                 onMouseEnter={() => {
                   threeCtrlRef.current.targetHoverIntensity = 1;
                   setIsLuminosityAmplified(true);
-                  setHudState('LUMINOSITY // AMPLIFIED');
+                  setHudState('WASM LINEAR MEMORY // ACTIVE ENCLAVE');
                   playUiChime(740);
                   setCursorExpanded(true);
                 }}
                 onMouseLeave={() => {
                   threeCtrlRef.current.targetHoverIntensity = 0;
                   setIsLuminosityAmplified(false);
-                  setHudState('ORBITAL FIELD // INTERACTIVE');
+                  setHudState('VFS INDEX // SEALED IN WASM MEMORY');
                   setCursorExpanded(false);
                 }}
                 className="relative w-full max-w-[490px] aspect-square flex items-center justify-center cursor-grab active:cursor-grabbing group focus:outline-none"
               >
-                {/* SVG Alignment Lines & Astrolabe Rings matching AVARAN logo */}
+                {/* SVG Astrolabe Coordinates & Alignment Ring */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 500 500">
                   <line x1="250" y1="0" x2="250" y2="500" stroke="rgba(197,198,203,0.22)" strokeWidth="0.75" />
                   <line
@@ -1177,7 +1205,6 @@ export default function App() {
                   />
                   <circle cx="250" cy="48" r="14" fill="none" stroke="rgba(242,240,235,0.45)" strokeWidth="1" />
                   <circle cx="250" cy="48" r="3" fill="#F2F0EB" />
-                  <circle cx="250" cy="82" r="2" fill="#C5C6CB" />
                   <circle cx="250" cy="250" r="202" fill="none" stroke="rgba(197,198,203,0.22)" strokeWidth="0.85" />
                   <circle
                     cx="250"
@@ -1191,10 +1218,6 @@ export default function App() {
                   />
                   <circle cx="48" cy="265" r="2.5" fill="#F2F0EB" />
                   <circle cx="452" cy="265" r="2.5" fill="#F2F0EB" />
-                  <line x1="185" y1="420" x2="185" y2="495" stroke="rgba(197,198,203,0.25)" strokeWidth="0.75" />
-                  <circle cx="185" cy="420" r="2" fill="#C5C6CB" />
-                  <line x1="355" y1="395" x2="355" y2="490" stroke="rgba(197,198,203,0.25)" strokeWidth="0.75" />
-                  <circle cx="355" cy="395" r="2" fill="#C5C6CB" />
                 </svg>
 
                 {/* Center Glow Aura */}
@@ -1217,16 +1240,16 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bottom Scroll Invitation */}
+          {/* Bottom Scroll Traverse Invitation */}
           <a
-            href="#about"
+            href="#deadlock"
             onClick={(e) => {
               e.preventDefault();
-              scrollTo('about');
+              scrollTo('deadlock');
             }}
             className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[#85868B] hover:text-[#F2F0EB] transition-colors group cursor-pointer"
           >
-            <span className="text-[10px] tracking-[0.34em] uppercase">Scroll to Traverse</span>
+            <span className="text-[10px] tracking-[0.34em] uppercase font-mono">Traverse Architecture</span>
             <div className="w-[1px] h-9 bg-[#242528] overflow-hidden relative">
               <div className="w-full h-1/2 bg-[#F2F0EB] animate-bounce" />
             </div>
@@ -1234,389 +1257,507 @@ export default function App() {
         </section>
 
         {/* ========================================== */}
-        {/* 4. PHILOSOPHY SECTION (Section 01)         */}
+        {/* 4. SECTION 1: BREAKING THE DEADLOCK        */}
         {/* ========================================== */}
         <section
-          id="about"
+          id="deadlock"
           className="relative min-h-screen w-full flex items-center justify-center py-32 px-4 sm:px-8 lg:px-14 overflow-hidden"
         >
-          {/* Dynamic 2D Geometric Network Background */}
-          <canvas ref={philosophyCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none opacity-45" />
+          <div className="max-w-6xl mx-auto w-full relative z-10">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-flex items-center gap-2 text-xs text-[#85868B] font-mono tracking-widest mb-4">
+                <span>01 // THE INDUSTRY DEADLOCK</span>
+                <span aria-hidden="true">/</span>
+                <span>CRYPTOGRAPHIC AUDIT</span>
+              </div>
 
-          <div className="max-w-4xl mx-auto text-center relative z-10">
-            {/* Editorial Heading */}
-            <div className="inline-flex items-center gap-2 text-xs text-[#85868B] font-mono tracking-widest mb-6">
-              <span>01. MANIFESTO</span>
-              <span aria-hidden="true">/</span>
-              <span>SYNTHESIS OF FORM &amp; THOUGHT</span>
-            </div>
+              <h2 className="font-['Cinzel',serif] text-3xl sm:text-5xl lg:text-6xl text-[#F2F0EB] tracking-tight leading-[1.15] mb-6">
+                Surveillance vs. Usability <br />
+                <span className="silver-gradient-text">Ends Here.</span>
+              </h2>
 
-            <h2 className="font-['Cinzel',serif] text-3xl sm:text-5xl lg:text-6xl text-[#F2F0EB] tracking-tight leading-[1.15] mb-10 text-balance">
-              Where Autonomous Intelligence <br className="hidden sm:inline" />
-              Meets <span className="silver-gradient-text">Architectural Form</span>
-            </h2>
-
-            <div className="space-y-6 text-[#A7A7AD] text-base sm:text-xl font-light leading-relaxed max-w-3xl mx-auto mb-16">
-              <p>
-                We do not view computation as inert mathematical abstraction. In the AVARAN paradigm,
-                every neural pathway is an architectural beam, every inference request an orbital transit,
-                and every sovereign cluster a fortified sanctuary for human cognition.
-              </p>
-              <p className="text-sm sm:text-base text-[#85868B]">
-                By harmonizing multi-agent consensus algorithms with sculpted geometric topology, AVARAN creates
-                infrastructures that self-heal, self-steer, and expand without thermodynamic compromise.
+              <p className="text-[#A7A7AD] text-base sm:text-lg font-light leading-relaxed">
+                For a decade, cloud storage forced an impossible compromise. Surveillance clouds like Google Drive,
+                Dropbox, and OneDrive give you instant search and smart organization—but hold your encryption keys,
+                scan your plaintext for AI and ads, and expose you to breaches and subpoenas. Traditional zero-knowledge
+                vaults like Cryptomator, MEGA, and Proton Drive encrypt your files client-side—but turn your vault into a
+                dumb black box of ciphertext blobs with zero full-text search or secret detection. AVARAN Zero-Vault executes
+                semantic indexing and DLP inside isolated browser Web Workers before encryption—delivering absolute
+                mathematical blindness and instant intelligence together.
               </p>
             </div>
 
-            {/* Three Structural Pillar Cards with Hairline Borders */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-              <div className="p-7 rounded-2xl bg-[#111214]/60 border border-[#C5C6CB]/15 backdrop-blur-md">
-                <div className="text-[10px] font-mono text-[#85868B] tracking-widest uppercase mb-3">PILLAR 01</div>
-                <h4 className="font-['Cinzel',serif] text-lg text-[#F2F0EB] mb-2">Translucent Cohesion</h4>
-                <p className="text-xs text-[#A7A7AD] leading-relaxed">
-                  Real-time visibility across multi-planar clusters. Zero black boxes, 100% auditable neural logic.
-                </p>
-              </div>
-
-              <div className="p-7 rounded-2xl bg-[#111214]/60 border border-[#C5C6CB]/15 backdrop-blur-md">
-                <div className="text-[10px] font-mono text-[#85868B] tracking-widest uppercase mb-3">PILLAR 02</div>
-                <h4 className="font-['Cinzel',serif] text-lg text-[#F2F0EB] mb-2">Thermodynamic Parity</h4>
-                <p className="text-xs text-[#A7A7AD] leading-relaxed">
-                  Ultra-low energy consumption yielding 0.04W per synthetic inference with liquid cooling matrices.
-                </p>
-              </div>
-
-              <div className="p-7 rounded-2xl bg-[#111214]/60 border border-[#C5C6CB]/15 backdrop-blur-md">
-                <div className="text-[10px] font-mono text-[#85868B] tracking-widest uppercase mb-3">PILLAR 03</div>
-                <h4 className="font-['Cinzel',serif] text-lg text-[#F2F0EB] mb-2">Lattice Sovereignty</h4>
-                <p className="text-xs text-[#A7A7AD] leading-relaxed">
-                  Hardware-enforced zero-knowledge enclaves with post-quantum Kyber-1024 cryptographic guarantees.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ========================================== */}
-        {/* 5. EXPLORE POSSIBILITIES (Section 02)      */}
-        {/* ========================================== */}
-        <section id="explore" className="relative py-32 px-4 sm:px-8 lg:px-14">
-          <div className="max-w-7xl mx-auto">
-            {/* Header & Filter Controls */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
-              <div>
-                <div className="text-[10px] font-mono tracking-widest uppercase text-[#85868B] mb-3">
-                  02. EXPLORATION DECK
+            {/* Interactive 3-Way Comparison Matrix */}
+            <div className="rounded-3xl glass-panel border border-[#C5C6CB]/20 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.85)]">
+              <div className="p-6 sm:p-8 border-b border-[#C5C6CB]/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-['Cinzel',serif] text-xl text-[#F2F0EB]">Architectural Comparison Matrix</h3>
+                  <p className="text-xs text-[#85868B] font-mono mt-1">
+                    SURVEILLANCE CLOUDS vs. TRADITIONAL VAULTS vs. AVARAN ZERO-VAULT
+                  </p>
                 </div>
-                <h2 className="font-['Cinzel',serif] text-3xl sm:text-5xl lg:text-6xl text-[#F2F0EB] tracking-tight">
-                  Explore <span className="silver-gradient-text">Possibilities</span>
-                </h2>
+                <div className="px-3 py-1 rounded-full border border-[#C5C6CB]/20 text-[10px] font-mono text-[#C5C6CB]">
+                  PARADIGM SHIFT // C-WASM + WEBGPU
+                </div>
               </div>
 
-              {/* Interactive Domain Filter Tabs */}
-              <div className="flex items-center gap-1.5 p-1 bg-[#111214] rounded-full border border-[#C5C6CB]/20">
-                {[
-                  { key: 'all', label: 'All Systems' },
-                  { key: 'neural', label: 'Neural Core' },
-                  { key: 'spatial', label: 'Spatial Grid' },
-                  { key: 'kinetic', label: 'Kinetic Flow' }
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => {
-                      playUiChime(620);
-                      setActiveDomainFilter(tab.key as 'all' | 'neural' | 'spatial' | 'kinetic');
-                    }}
-                    onMouseEnter={() => setCursorExpanded(true)}
-                    onMouseLeave={() => setCursorExpanded(false)}
-                    className={`px-4 py-2 rounded-full text-xs font-medium tracking-wider uppercase transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-                      activeDomainFilter === tab.key
-                        ? 'bg-[#F2F0EB] text-[#050505] shadow-sm'
-                        : 'text-[#A7A7AD] hover:text-[#F2F0EB]'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-[#242528] bg-[#111214]/60 text-[11px] font-mono tracking-wider uppercase text-[#85868B]">
+                      <th className="py-4 px-6 font-medium">Evaluation Vector</th>
+                      <th className="py-4 px-6 font-medium">Surveillance Clouds (Drive/Dropbox)</th>
+                      <th className="py-4 px-6 font-medium">Traditional Vaults (MEGA/Cryptomator)</th>
+                      <th className="py-4 px-6 font-medium text-[#F2F0EB] bg-[#C5C6CB]/10">AVARAN Zero-Vault</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#242528]/70">
+                    <tr className="hover:bg-[#111214]/40 transition-colors">
+                      <td className="py-4 px-6 font-medium text-[#F2F0EB]">Client-Side Keys</td>
+                      <td className="py-4 px-6 text-[#85868B]">
+                        <span className="inline-flex items-center gap-1.5 text-rose-400/90 font-mono text-xs">
+                          <X className="w-3.5 h-3.5" /> No (Provider holds keys)
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-[#A7A7AD]">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-400/90 font-mono text-xs">
+                          <Check className="w-3.5 h-3.5" /> Yes
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 bg-[#C5C6CB]/5 font-mono text-xs text-[#F2F0EB]">
+                        <span className="inline-flex items-center gap-1.5 text-[#F2F0EB] font-semibold">
+                          <Check className="w-3.5 h-3.5 text-[#C5C6CB]" /> Yes (Argon2id + HKDF in Wasm)
+                        </span>
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-[#111214]/40 transition-colors">
+                      <td className="py-4 px-6 font-medium text-[#F2F0EB]">Server Sees Plaintext</td>
+                      <td className="py-4 px-6 text-[#85868B]">
+                        <span className="inline-flex items-center gap-1.5 text-rose-400/90 font-mono text-xs">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Yes (Scans for AI &amp; Ads)
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-[#A7A7AD]">
+                        <span className="inline-flex items-center gap-1.5 text-emerald-400/90 font-mono text-xs">
+                          <Check className="w-3.5 h-3.5" /> No (Ciphertext blobs only)
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 bg-[#C5C6CB]/5 font-mono text-xs text-[#F2F0EB]">
+                        <span className="inline-flex items-center gap-1.5 text-[#F2F0EB] font-semibold">
+                          <Check className="w-3.5 h-3.5 text-[#C5C6CB]" /> Never (Untrusted blind octet pipe)
+                        </span>
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-[#111214]/40 transition-colors">
+                      <td className="py-4 px-6 font-medium text-[#F2F0EB]">Semantic Vector Search</td>
+                      <td className="py-4 px-6 text-[#85868B]">
+                        <span className="inline-flex items-center gap-1.5 text-[#C5C6CB] font-mono text-xs">
+                          Yes (Server-side, cleartext)
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-[#85868B]">
+                        <span className="inline-flex items-center gap-1.5 text-rose-400/90 font-mono text-xs">
+                          <X className="w-3.5 h-3.5" /> No (Dumb storage bucket)
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 bg-[#C5C6CB]/5 font-mono text-xs text-[#F2F0EB]">
+                        <span className="inline-flex items-center gap-1.5 text-[#F2F0EB] font-semibold">
+                          <Check className="w-3.5 h-3.5 text-[#C5C6CB]" /> Yes (&lt;5ms in-browser 384-dim)
+                        </span>
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-[#111214]/40 transition-colors">
+                      <td className="py-4 px-6 font-medium text-[#F2F0EB]">Pre-Upload Secret Detection (DLP)</td>
+                      <td className="py-4 px-6 text-[#85868B]">
+                        <span className="inline-flex items-center gap-1.5 text-rose-400/90 font-mono text-xs">
+                          Server-side only (Already leaked)
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-[#85868B]">
+                        <span className="inline-flex items-center gap-1.5 text-rose-400/90 font-mono text-xs">
+                          <X className="w-3.5 h-3.5" /> No
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 bg-[#C5C6CB]/5 font-mono text-xs text-[#F2F0EB]">
+                        <span className="inline-flex items-center gap-1.5 text-[#F2F0EB] font-semibold">
+                          <Check className="w-3.5 h-3.5 text-[#C5C6CB]" /> Yes (Entropy + WebAuthn lock)
+                        </span>
+                      </td>
+                    </tr>
+
+                    <tr className="hover:bg-[#111214]/40 transition-colors">
+                      <td className="py-4 px-6 font-medium text-[#F2F0EB]">Size &amp; Directory Obfuscation</td>
+                      <td className="py-4 px-6 text-[#85868B]">
+                        <span className="inline-flex items-center gap-1.5 text-rose-400/90 font-mono text-xs">
+                          <X className="w-3.5 h-3.5" /> No (Tree &amp; size exposed)
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-[#A7A7AD]">
+                        <span className="inline-flex items-center gap-1.5 text-amber-400/90 font-mono text-xs">
+                          Partial (Leaks file size &amp; tree depth)
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 bg-[#C5C6CB]/5 font-mono text-xs text-[#F2F0EB]">
+                        <span className="inline-flex items-center gap-1.5 text-[#F2F0EB] font-semibold">
+                          <Check className="w-3.5 h-3.5 text-[#C5C6CB]" /> Full (Monolithic VFS + PADMÉ 4MB)
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </div>
-
-            {/* Three 3D Tilt Bento Interactive Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Card 1: Cognitive Orbital Synthesis */}
-              {(activeDomainFilter === 'all' || activeDomainFilter === 'neural') && (
-                <article
-                  onMouseMove={handleCardMouseMove}
-                  onMouseLeave={handleCardMouseLeave}
-                  onClick={() => openModalWithSpec('orbital-synthesis')}
-                  onMouseEnter={() => setCursorExpanded(true)}
-                  className="tilt-card silver-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between group cursor-pointer transition-all duration-300"
-                >
-                  <div>
-                    {/* Media Container */}
-                    <div className="relative h-60 w-full rounded-2xl overflow-hidden mb-7 border border-[#C5C6CB]/15 bg-[#050505]">
-                      <img
-                        src={CARD_ORBITAL}
-                        alt="Cognitive Orbital Synthesis"
-                        className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-80" />
-                      <div className="absolute top-4 left-4 px-3 py-1 rounded-full glass-panel text-[10px] font-mono tracking-widest text-[#C5C6CB] uppercase">
-                        SYS // 01.A
-                      </div>
-                      <div className="absolute top-4 right-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#F2F0EB] group-hover:rotate-45 group-hover:bg-[#F2F0EB] group-hover:text-[#050505] transition-all duration-500">
-                        <Cpu className="w-4 h-4" />
-                      </div>
-                    </div>
-
-                    <div className="text-[11px] font-mono tracking-[0.25em] uppercase text-[#85868B] mb-2">
-                      NEURAL TOPOLOGY
-                    </div>
-                    <h3 className="font-['Cinzel',serif] text-2xl text-[#F2F0EB] mb-3 group-hover:text-[#C5C6CB] transition-colors">
-                      Cognitive Orbital Synthesis
-                    </h3>
-                    <p className="text-sm text-[#A7A7AD] font-light leading-relaxed mb-6">
-                      Bind disparate enterprise models into a self-balancing orbital mesh capable of real-time reasoning
-                      across billions of live vectors.
-                    </p>
-                  </div>
-
-                  <div className="pt-5 border-t border-[#C5C6CB]/10 flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#C5C6CB] tabular-nums">THROUGHPUT: 1.4 PB/S</span>
-                    <span className="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-[#F2F0EB] group-hover:translate-x-1 transition-transform">
-                      Inspect Spec <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </article>
-              )}
-
-              {/* Card 2: Astrolabe Spatial Telemetry */}
-              {(activeDomainFilter === 'all' || activeDomainFilter === 'spatial') && (
-                <article
-                  onMouseMove={handleCardMouseMove}
-                  onMouseLeave={handleCardMouseLeave}
-                  onClick={() => openModalWithSpec('quantum-telemetry')}
-                  onMouseEnter={() => setCursorExpanded(true)}
-                  className="tilt-card silver-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between group cursor-pointer transition-all duration-300"
-                >
-                  <div>
-                    <div className="relative h-60 w-full rounded-2xl overflow-hidden mb-7 border border-[#C5C6CB]/15 bg-[#050505]">
-                      <img
-                        src={CARD_GRID}
-                        alt="Astrolabe Spatial Telemetry"
-                        className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-80" />
-                      <div className="absolute top-4 left-4 px-3 py-1 rounded-full glass-panel text-[10px] font-mono tracking-widest text-[#C5C6CB] uppercase">
-                        SYS // 02.B
-                      </div>
-                      <div className="absolute top-4 right-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#F2F0EB] group-hover:rotate-45 group-hover:bg-[#F2F0EB] group-hover:text-[#050505] transition-all duration-500">
-                        <Layers className="w-4 h-4" />
-                      </div>
-                    </div>
-
-                    <div className="text-[11px] font-mono tracking-[0.25em] uppercase text-[#85868B] mb-2">
-                      DIMENSIONAL MATRIX
-                    </div>
-                    <h3 className="font-['Cinzel',serif] text-2xl text-[#F2F0EB] mb-3 group-hover:text-[#C5C6CB] transition-colors">
-                      Astrolabe Spatial Telemetry
-                    </h3>
-                    <p className="text-sm text-[#A7A7AD] font-light leading-relaxed mb-6">
-                      Navigate high-density infrastructure through translucent glass planes that isolate anomalies with
-                      sub-millimeter precision.
-                    </p>
-                  </div>
-
-                  <div className="pt-5 border-t border-[#C5C6CB]/10 flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#C5C6CB] tabular-nums">PRECISION: 99.999%</span>
-                    <span className="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-[#F2F0EB] group-hover:translate-x-1 transition-transform">
-                      Inspect Spec <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </article>
-              )}
-
-              {/* Card 3: Kinetic Continuum Engine */}
-              {(activeDomainFilter === 'all' || activeDomainFilter === 'kinetic') && (
-                <article
-                  onMouseMove={handleCardMouseMove}
-                  onMouseLeave={handleCardMouseLeave}
-                  onClick={() => openModalWithSpec('kinetic-morphogenesis')}
-                  onMouseEnter={() => setCursorExpanded(true)}
-                  className="tilt-card silver-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between group cursor-pointer transition-all duration-300"
-                >
-                  <div>
-                    <div className="relative h-60 w-full rounded-2xl overflow-hidden mb-7 border border-[#C5C6CB]/15 bg-[#050505]">
-                      <img
-                        src={CARD_WAVE}
-                        alt="Kinetic Continuum Engine"
-                        className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-80" />
-                      <div className="absolute top-4 left-4 px-3 py-1 rounded-full glass-panel text-[10px] font-mono tracking-widest text-[#C5C6CB] uppercase">
-                        SYS // 03.C
-                      </div>
-                      <div className="absolute top-4 right-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#F2F0EB] group-hover:rotate-45 group-hover:bg-[#F2F0EB] group-hover:text-[#050505] transition-all duration-500">
-                        <Activity className="w-4 h-4" />
-                      </div>
-                    </div>
-
-                    <div className="text-[11px] font-mono tracking-[0.25em] uppercase text-[#85868B] mb-2">
-                      FLUID COMPUTATION
-                    </div>
-                    <h3 className="font-['Cinzel',serif] text-2xl text-[#F2F0EB] mb-3 group-hover:text-[#C5C6CB] transition-colors">
-                      Kinetic Continuum Engine
-                    </h3>
-                    <p className="text-sm text-[#A7A7AD] font-light leading-relaxed mb-6">
-                      Deploy liquid-mercury execution pipelines that dynamically re-route compute bandwidth across global
-                      nodes in zero-downtime waves.
-                    </p>
-                  </div>
-
-                  <div className="pt-5 border-t border-[#C5C6CB]/10 flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#C5C6CB] tabular-nums">SCALE: ELASTIC ∞</span>
-                    <span className="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-[#F2F0EB] group-hover:translate-x-1 transition-transform">
-                      Inspect Spec <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </article>
-              )}
             </div>
           </div>
         </section>
 
         {/* ========================================== */}
-        {/* 6. THE AVARAN EXPERIENCE (Section 03)      */}
+        {/* 5. SECTION 2: 3 PILLARS (3D TILT CARDS)    */}
+        {/* ========================================== */}
+        <section id="architecture" className="relative py-32 px-4 sm:px-8 lg:px-14">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center max-w-3xl mx-auto mb-20">
+              <div className="inline-flex items-center gap-2 text-xs text-[#85868B] font-mono tracking-widest mb-4">
+                <span>02 // ARCHITECTURAL NOVELTY</span>
+                <span aria-hidden="true">/</span>
+                <span>CORE PILLARS</span>
+              </div>
+              <h2 className="font-['Cinzel',serif] text-3xl sm:text-5xl lg:text-6xl text-[#F2F0EB] tracking-tight mb-5">
+                Three Pillars of <span className="silver-gradient-text">Zero-Knowledge Sovereignty</span>
+              </h2>
+              <p className="text-[#A7A7AD] text-base sm:text-lg font-light">
+                Hardware-enforced WebAssembly cryptography, uniform block slicing, and client-side ONNX machine learning.
+              </p>
+            </div>
+
+            {/* Three 3D Tilt Bento Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Pillar 1: C-to-Wasm */}
+              <article
+                onMouseMove={handleCardMouseMove}
+                onMouseLeave={handleCardMouseLeave}
+                onClick={() => openModalWithSpec('crypto-wasm')}
+                onMouseEnter={() => setCursorExpanded(true)}
+                className="tilt-card silver-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between group cursor-pointer transition-all duration-300"
+              >
+                <div>
+                  <div className="relative h-60 w-full rounded-2xl overflow-hidden mb-7 border border-[#C5C6CB]/15 bg-[#050505]">
+                    <img
+                      src={CARD_ORBITAL}
+                      alt="C-to-WebAssembly Crypto Engine"
+                      className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-80" />
+                    <div className="absolute top-4 left-4 px-3 py-1 rounded-full glass-panel text-[10px] font-mono tracking-widest text-[#C5C6CB] uppercase">
+                      SYS // CRYPTO-WASM
+                    </div>
+                    <div className="absolute top-4 right-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#F2F0EB] group-hover:rotate-45 group-hover:bg-[#F2F0EB] group-hover:text-[#050505] transition-all duration-500">
+                      <Binary className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] font-mono tracking-[0.25em] uppercase text-[#85868B] mb-2">
+                    HARDWARE-LEVEL ENCLAVE
+                  </div>
+                  <h3 className="font-['Cinzel',serif] text-2xl text-[#F2F0EB] mb-3 group-hover:text-[#C5C6CB] transition-colors">
+                    C-to-WebAssembly Crypto Engine
+                  </h3>
+                  <p className="text-sm text-[#A7A7AD] font-light leading-relaxed mb-6">
+                    Implements memory-hard Argon2id key derivation, HKDF-SHA256 key separation (isolated Key_Auth and
+                    Key_KEK), and explicit memory zeroing (<code className="text-[#F2F0EB] font-mono">explicit_bzero</code>{' '}
+                    resistant to LLVM dead-store optimization) so plaintext buffers and keys never linger in the JavaScript
+                    V8 garbage-collected heap.
+                  </p>
+                </div>
+
+                <div className="pt-5 border-t border-[#C5C6CB]/10 flex items-center justify-between">
+                  <span className="text-xs font-mono text-[#C5C6CB]">MEMORY HYGIENE: EXPLICIT_BZERO</span>
+                  <span className="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-[#F2F0EB] group-hover:translate-x-1 transition-transform">
+                    Inspect <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </article>
+
+              {/* Pillar 2: Decoupled VFS & PADMÉ */}
+              <article
+                onMouseMove={handleCardMouseMove}
+                onMouseLeave={handleCardMouseLeave}
+                onClick={() => openModalWithSpec('vfs-padme')}
+                onMouseEnter={() => setCursorExpanded(true)}
+                className="tilt-card silver-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between group cursor-pointer transition-all duration-300"
+              >
+                <div>
+                  <div className="relative h-60 w-full rounded-2xl overflow-hidden mb-7 border border-[#C5C6CB]/15 bg-[#050505]">
+                    <img
+                      src={CARD_GRID}
+                      alt="Decoupled VFS & PADMÉ Padding"
+                      className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-80" />
+                    <div className="absolute top-4 left-4 px-3 py-1 rounded-full glass-panel text-[10px] font-mono tracking-widest text-[#C5C6CB] uppercase">
+                      SYS // VFS-PADMÉ
+                    </div>
+                    <div className="absolute top-4 right-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#F2F0EB] group-hover:rotate-45 group-hover:bg-[#F2F0EB] group-hover:text-[#050505] transition-all duration-500">
+                      <Box className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] font-mono tracking-[0.25em] uppercase text-[#85868B] mb-2">
+                    PHYSICAL INDISTINGUISHABILITY
+                  </div>
+                  <h3 className="font-['Cinzel',serif] text-2xl text-[#F2F0EB] mb-3 group-hover:text-[#C5C6CB] transition-colors">
+                    Decoupled VFS &amp; PADMÉ Padding
+                  </h3>
+                  <p className="text-sm text-[#A7A7AD] font-light leading-relaxed mb-6">
+                    True decoupling of your logical file system from physical storage. Filenames, directory trees, and
+                    chunk UUID pointers live inside a monolithic encrypted VFS Index, while files are sliced into uniform
+                    4 MB blocks with PADMÉ padding (≤12% overhead cap)—making 100 small PDFs indistinguishable from a
+                    single video file.
+                  </p>
+                </div>
+
+                <div className="pt-5 border-t border-[#C5C6CB]/10 flex items-center justify-between">
+                  <span className="text-xs font-mono text-[#C5C6CB]">UNIFORM BLOCKS: 4 MB STREAM AEAD</span>
+                  <span className="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-[#F2F0EB] group-hover:translate-x-1 transition-transform">
+                    Inspect <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </article>
+
+              {/* Pillar 3: WebGPU Semantic Search & DLP */}
+              <article
+                onMouseMove={handleCardMouseMove}
+                onMouseLeave={handleCardMouseLeave}
+                onClick={() => openModalWithSpec('webgpu-onnx')}
+                onMouseEnter={() => setCursorExpanded(true)}
+                className="tilt-card silver-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between group cursor-pointer transition-all duration-300"
+              >
+                <div>
+                  <div className="relative h-60 w-full rounded-2xl overflow-hidden mb-7 border border-[#C5C6CB]/15 bg-[#050505]">
+                    <img
+                      src={CARD_WAVE}
+                      alt="In-Browser Semantic Search & DLP"
+                      className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-80" />
+                    <div className="absolute top-4 left-4 px-3 py-1 rounded-full glass-panel text-[10px] font-mono tracking-widest text-[#C5C6CB] uppercase">
+                      SYS // WEBGPU-ONNX
+                    </div>
+                    <div className="absolute top-4 right-4 w-10 h-10 rounded-full glass-panel flex items-center justify-center text-[#F2F0EB] group-hover:rotate-45 group-hover:bg-[#F2F0EB] group-hover:text-[#050505] transition-all duration-500">
+                      <Cpu className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] font-mono tracking-[0.25em] uppercase text-[#85868B] mb-2">
+                    CLIENT-SIDE COGNITION
+                  </div>
+                  <h3 className="font-['Cinzel',serif] text-2xl text-[#F2F0EB] mb-3 group-hover:text-[#C5C6CB] transition-colors">
+                    In-Browser Semantic Search &amp; DLP
+                  </h3>
+                  <p className="text-sm text-[#A7A7AD] font-light leading-relaxed mb-6">
+                    Bridges WebGPU/ONNX machine learning with zero-knowledge cryptography inside sandboxed Web Workers.
+                    Search natural queries like &quot;tax invoice from March&quot; in under 5ms via 384-dim float embeddings,
+                    while a pre-encryption Shannon entropy scanner flags .env files, SSH keys, and PII for mandatory
+                    WebAuthn Passkey verification.
+                  </p>
+                </div>
+
+                <div className="pt-5 border-t border-[#C5C6CB]/10 flex items-center justify-between">
+                  <span className="text-xs font-mono text-[#C5C6CB]">VECTOR SEARCH: 384-DIM &lt; 5MS</span>
+                  <span className="inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-[#F2F0EB] group-hover:translate-x-1 transition-transform">
+                    Inspect <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================== */}
+        {/* 6. SECTION 3: 5-STAGE BLIND UPLOAD PIPELINE */}
         {/* ========================================== */}
         <section
-          id="experience"
+          id="pipeline"
           className="relative min-h-screen w-full py-32 px-4 sm:px-8 lg:px-14 flex items-center overflow-hidden"
         >
           <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-            {/* Left Controls Deck */}
-            <div className="lg:col-span-6 flex flex-col items-start">
+            {/* Left Controls & Step Explanation */}
+            <div className="lg:col-span-7 flex flex-col items-start">
               <div className="inline-flex items-center gap-2 text-xs text-[#85868B] font-mono tracking-widest mb-4">
-                <span>03. INTERACTIVE 3D LAB</span>
+                <span>03 // SYSTEM ARCHITECTURE</span>
                 <span aria-hidden="true">/</span>
-                <span>REAL-TIME ASTROLABE CONTROL</span>
+                <span>5-STAGE CHOREOGRAPHY</span>
               </div>
 
-              <h2 className="font-['Cinzel',serif] text-3xl sm:text-5xl text-[#F2F0EB] tracking-tight leading-[1.12] mb-6">
-                Direct the <br />
-                <span className="silver-gradient-text">Orbital Dynamics</span>
+              <h2 className="font-['Cinzel',serif] text-3xl sm:text-5xl text-[#F2F0EB] tracking-tight leading-[1.12] mb-5">
+                Life of a <br />
+                <span className="silver-gradient-text">Mathematically Blind Upload</span>
               </h2>
 
-              <p className="text-[#A7A7AD] text-base font-light leading-relaxed mb-10 max-w-lg">
-                Tune the velocity and geometry of the background 3D celestial engine in real-time.
-                Observe how the ribbon knots and concentric astrolabe rings respond to your tactile adjustments.
+              <p className="text-[#A7A7AD] text-base font-light leading-relaxed mb-8 max-w-xl">
+                Observe the complete journey of a file from browser drop to encrypted cloud persistence. Every step
+                executes in isolated client memory before uniform octet-stream bytes leave your machine.
               </p>
 
-              {/* Sliders Deck */}
-              <div className="w-full max-w-lg p-6 sm:p-8 rounded-3xl glass-panel border border-[#C5C6CB]/20 space-y-6">
-                {/* Velocity Slider */}
-                <div>
-                  <div className="flex items-center justify-between text-xs font-mono text-[#85868B] mb-2.5">
-                    <span className="uppercase tracking-wider">Angular Velocity</span>
-                    <span className="text-[#F2F0EB] tabular-nums font-semibold">{speedMultiplier.toFixed(1)}x</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.2"
-                    max="3.0"
-                    step="0.1"
-                    value={speedMultiplier}
-                    onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
-                    className="w-full accent-[#F2F0EB] bg-[#242528] h-1.5 rounded-lg cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] font-mono text-[#85868B] mt-1">
-                    <span>0.2x (Glacial)</span>
-                    <span>1.0x (Standard)</span>
-                    <span>3.0x (Warp)</span>
-                  </div>
-                </div>
-
-                {/* Astrolabe Scale Slider */}
-                <div>
-                  <div className="flex items-center justify-between text-xs font-mono text-[#85868B] mb-2.5">
-                    <span className="uppercase tracking-wider">Astrolabe Ring Expansion</span>
-                    <span className="text-[#F2F0EB] tabular-nums font-semibold">{ringExpansion}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="50"
-                    max="180"
-                    step="5"
-                    value={ringExpansion}
-                    onChange={(e) => setRingExpansion(parseInt(e.target.value, 10))}
-                    className="w-full accent-[#F2F0EB] bg-[#242528] h-1.5 rounded-lg cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] font-mono text-[#85868B] mt-1">
-                    <span>50% (Condensed)</span>
-                    <span>100% (Balanced)</span>
-                    <span>180% (Hyper-Expanded)</span>
-                  </div>
-                </div>
-
-                {/* Presets and Reset */}
-                <div className="pt-4 border-t border-[#C5C6CB]/15 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSpeedMultiplier(0.4);
-                        setRingExpansion(70);
-                        playUiChime(500);
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-[#242528]/80 text-[10px] font-mono uppercase text-[#A7A7AD] hover:text-[#F2F0EB] hover:bg-[#242528] transition-colors"
-                    >
-                      Subtle
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSpeedMultiplier(1.0);
-                        setRingExpansion(100);
-                        playUiChime(600);
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-[#242528]/80 text-[10px] font-mono uppercase text-[#A7A7AD] hover:text-[#F2F0EB] hover:bg-[#242528] transition-colors"
-                    >
-                      Default
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSpeedMultiplier(2.5);
-                        setRingExpansion(150);
-                        playUiChime(800);
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-[#242528]/80 text-[10px] font-mono uppercase text-[#A7A7AD] hover:text-[#F2F0EB] hover:bg-[#242528] transition-colors"
-                    >
-                      Superluminal
-                    </button>
-                  </div>
-
+              {/* Step Navigation Bar */}
+              <div className="flex items-center gap-2 mb-6 flex-wrap">
+                {[1, 2, 3, 4, 5].map((stageNum) => (
                   <button
+                    key={stageNum}
                     type="button"
                     onClick={() => {
-                      setSpeedMultiplier(1.0);
-                      setRingExpansion(100);
-                      playUiChime(528);
+                      setActiveStage(stageNum);
+                      playUiChime(500 + stageNum * 60);
                     }}
-                    className="flex items-center gap-1.5 text-xs font-mono text-[#85868B] hover:text-[#F2F0EB] transition-colors"
+                    onMouseEnter={() => setCursorExpanded(true)}
+                    onMouseLeave={() => setCursorExpanded(false)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                      activeStage === stageNum
+                        ? 'bg-[#F2F0EB] text-[#050505] font-semibold shadow-[0_0_15px_rgba(242,240,235,0.4)]'
+                        : 'border border-[#C5C6CB]/20 bg-[#111214]/60 text-[#A7A7AD] hover:text-[#F2F0EB]'
+                    }`}
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Reset</span>
+                    Stage 0{stageNum}
                   </button>
-                </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => setIsPipelinePlaying(!isPipelinePlaying)}
+                  className="px-3 py-1.5 rounded-lg border border-[#C5C6CB]/25 bg-[#242528]/80 text-[#F2F0EB] text-xs font-mono flex items-center gap-1.5 hover:border-[#F2F0EB] transition-colors"
+                >
+                  {isPipelinePlaying ? (
+                    <>
+                      <Pause className="w-3.5 h-3.5" /> Pause Cycle
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3.5 h-3.5" /> Auto Traverse
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Stage Detail Card */}
+              <div className="w-full max-w-xl p-6 sm:p-8 rounded-3xl glass-panel border border-[#C5C6CB]/20 space-y-4 shadow-[0_15px_45px_rgba(0,0,0,0.85)]">
+                {activeStage === 1 && (
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-mono text-[#85868B] mb-2">
+                      <span className="text-[#C5C6CB]">MAIN UI THREAD // INGESTION</span>
+                      <span className="tabular-nums">STAGE 01 / 05</span>
+                    </div>
+                    <h3 className="font-['Cinzel',serif] text-xl text-[#F2F0EB] mb-2">
+                      Zero-Copy Worker Handshake
+                    </h3>
+                    <p className="text-sm text-[#A7A7AD] leading-relaxed mb-4">
+                      The user drops a 500 MB file into React. The native file handle transfers immediately to a
+                      dedicated, isolated Web Worker thread via zero-copy buffer transfer, preventing main-thread UI jank.
+                    </p>
+                    <div className="p-3.5 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/15 font-mono text-xs text-[#85868B] space-y-1">
+                      <div>INGESTION METHOD: <span className="text-[#F2F0EB]">HTML5 Drag-and-Drop FileHandle</span></div>
+                      <div>DISPATCH TARGET: <span className="text-[#C5C6CB]">crypto-pipeline.worker.js</span></div>
+                      <div>MAIN THREAD BLOCKING: <span className="text-emerald-400 font-semibold">0.00 ms (Non-Blocking)</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {activeStage === 2 && (
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-mono text-[#85868B] mb-2">
+                      <span className="text-[#C5C6CB]">ISOLATED WEB WORKER // PRE-ENCRYPTION AI &amp; DLP</span>
+                      <span className="tabular-nums">STAGE 02 / 05</span>
+                    </div>
+                    <h3 className="font-['Cinzel',serif] text-xl text-[#F2F0EB] mb-2">
+                      Client-Side Semantic Vector Embedding &amp; Shannon Scanner
+                    </h3>
+                    <p className="text-sm text-[#A7A7AD] leading-relaxed mb-4">
+                      Before encryption begins, the sandboxed worker extracts textual snippets in memory, computes a
+                      384-dimensional dense semantic embedding via local WebGPU/ONNX runtime, and scans buffers with a
+                      Shannon entropy detector to flag raw .env secrets, SSH private keys, and PII.
+                    </p>
+                    <div className="p-3.5 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/15 font-mono text-xs text-[#85868B] space-y-1">
+                      <div>EMBEDDING SPEC: <span className="text-[#F2F0EB]">MiniLM-L6-v2 (384-Dim Float32 via WebGPU)</span></div>
+                      <div>DLP ENGINE: <span className="text-[#C5C6CB]">Shannon Entropy Threshold (&gt; 4.85 bits/byte)</span></div>
+                      <div>SENSITIVITY ENCLAVE: <span className="text-amber-400 font-semibold">WebAuthn Passkey Guard Active</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {activeStage === 3 && (
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-mono text-[#85868B] mb-2">
+                      <span className="text-[#C5C6CB]">ISOLATED WEB WORKER // CHUNKED STREAM AEAD</span>
+                      <span className="tabular-nums">STAGE 03 / 05</span>
+                    </div>
+                    <h3 className="font-['Cinzel',serif] text-xl text-[#F2F0EB] mb-2">
+                      4 MB Slicing, PADMÉ Padding &amp; Counter-Nonce AEAD
+                    </h3>
+                    <p className="text-sm text-[#A7A7AD] leading-relaxed mb-4">
+                      The worker slices the file into uniform 4 MB ArrayBuffers, pads the final chunk with PADMÉ, and encrypts
+                      each block with a unique per-file DEK using C-to-Wasm STREAM AEAD. Nonces use strict sequential counters,
+                      and AAD binds <code className="text-[#F2F0EB]">(file_id, chunk_index, is_last_chunk)</code> to prevent reordering.
+                    </p>
+                    <div className="p-3.5 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/15 font-mono text-xs text-[#85868B] space-y-1">
+                      <div>BLOCK SIZE: <span className="text-[#F2F0EB]">4,194,304 Bytes (4 MB Uniform)</span></div>
+                      <div>PADDING SPEC: <span className="text-[#C5C6CB]">PADMÉ (Purf &amp; Teutsch, ≤12% Overhead)</span></div>
+                      <div>AUTHENTICATED DATA: <span className="text-emerald-400 font-semibold">AAD cryptographically bound</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {activeStage === 4 && (
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-mono text-[#85868B] mb-2">
+                      <span className="text-[#C5C6CB]">ISOLATED WEB WORKER // MONOLITHIC VFS UPDATE</span>
+                      <span className="tabular-nums">STAGE 04 / 05</span>
+                    </div>
+                    <h3 className="font-['Cinzel',serif] text-xl text-[#F2F0EB] mb-2">
+                      Monolithic Encrypted VFS Index Seal
+                    </h3>
+                    <p className="text-sm text-[#A7A7AD] leading-relaxed mb-4">
+                      The per-file DEK, original filename, directory tree path, chunk UUID pointers, WebAuthn sensitivity
+                      flag, and 384-dim semantic vector embedding are serialized into the monolithic VFS Index and encrypted
+                      under Key_Vault. Memory is wiped with <code className="text-[#F2F0EB]">explicit_bzero</code>.
+                    </p>
+                    <div className="p-3.5 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/15 font-mono text-xs text-[#85868B] space-y-1">
+                      <div>VFS ARCHITECTURE: <span className="text-[#F2F0EB]">Monolithic Decoupled Index</span></div>
+                      <div>KEY ZEROIZATION: <span className="text-emerald-400 font-semibold">explicit_bzero in C/Wasm Linear Memory</span></div>
+                      <div>V8 HEAP FOOTPRINT: <span className="text-[#C5C6CB]">0 Plaintext Keys in GC Heap</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {activeStage === 5 && (
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-mono text-[#85868B] mb-2">
+                      <span className="text-[#C5C6CB]">BLIND FASTAPI CLOUD // OCTET-STREAM PIPE</span>
+                      <span className="tabular-nums">STAGE 05 / 05</span>
+                    </div>
+                    <h3 className="font-['Cinzel',serif] text-xl text-[#F2F0EB] mb-2">
+                      Untrusted Blind Ingestion &amp; S3 Sink
+                    </h3>
+                    <p className="text-sm text-[#A7A7AD] leading-relaxed mb-4">
+                      The Python + FastAPI backend receives uniform <code className="text-[#F2F0EB]">application/octet-stream</code> blobs
+                      identified purely by random UUIDs. The cloud server writes bytes directly to S3 object storage—mathematically
+                      blind to file identity, structure, contents, or directory depth.
+                    </p>
+                    <div className="p-3.5 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/15 font-mono text-xs text-[#85868B] space-y-1">
+                      <div>CLOUD VISIBILITY: <span className="text-emerald-400 font-semibold">0.00% (Blind Octet-Stream)</span></div>
+                      <div>STORED NAMES: <span className="text-[#C5C6CB]">Random UUIDv4 Only</span></div>
+                      <div>SUBPOENA RESISTANCE: <span className="text-[#F2F0EB]">Mathematically Indistinguishable Chunks</span></div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Right Telemetry Stage */}
-            <div className="lg:col-span-6 relative flex items-center justify-center min-h-[380px]">
+            {/* Right Telemetry & Interactive Astrolabe Tuning */}
+            <div className="lg:col-span-5 relative flex items-center justify-center min-h-[380px]">
               <div className="relative w-full max-w-[460px] aspect-square flex items-center justify-center">
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 460 460">
                   <circle cx="230" cy="230" r="190" fill="none" stroke="rgba(197, 198, 203, 0.18)" strokeWidth="0.8" />
@@ -1636,19 +1777,19 @@ export default function App() {
 
                 {/* Floating Telemetry Callouts */}
                 <div className="absolute top-10 left-2 sm:left-6 px-4 py-2.5 rounded-xl glass-panel text-left">
-                  <div className="text-[9px] font-mono tracking-widest text-[#85868B]">INCLINATION</div>
-                  <div className="font-['Cinzel',serif] text-sm text-[#F2F0EB]">23.44° N // LOCKED</div>
+                  <div className="text-[9px] font-mono tracking-widest text-[#85868B]">ACTIVE PIPELINE</div>
+                  <div className="font-['Cinzel',serif] text-sm text-[#F2F0EB]">STAGE 0{activeStage} // LOCKED</div>
                 </div>
 
                 <div className="absolute bottom-12 right-2 sm:right-6 px-4 py-2.5 rounded-xl glass-panel text-left">
-                  <div className="text-[9px] font-mono tracking-widest text-[#85868B]">LUMINOSITY FLUX</div>
-                  <div className="font-['Cinzel',serif] text-sm text-[#F2F0EB]">98.4 LUM // NOMINAL</div>
+                  <div className="text-[9px] font-mono tracking-widest text-[#85868B]">STREAM CIPHER</div>
+                  <div className="font-['Cinzel',serif] text-sm text-[#F2F0EB]">XCHACHA20-POLY1305</div>
                 </div>
 
                 <div className="absolute top-1/2 -translate-y-1/2 right-0 px-3.5 py-2 rounded-xl glass-panel text-left">
-                  <div className="text-[9px] font-mono tracking-widest text-[#85868B]">ACTIVE SPEED</div>
+                  <div className="text-[9px] font-mono tracking-widest text-[#85868B]">WASM THROUGHPUT</div>
                   <div className="font-['Cinzel',serif] text-sm text-[#F2F0EB] tabular-nums">
-                    {(speedMultiplier * 24.8).toFixed(1)} km/s
+                    {(speedMultiplier * 1.8).toFixed(2)} GB/s
                   </div>
                 </div>
               </div>
@@ -1657,152 +1798,211 @@ export default function App() {
         </section>
 
         {/* ========================================== */}
-        {/* 7. ARCHITECTURAL CAPABILITIES (Section 04)  */}
+        {/* 7. SECTION 4: 5-POINT THREAT MATRIX        */}
         {/* ========================================== */}
-        <section id="features" className="relative py-32 px-4 sm:px-8 lg:px-14">
+        <section id="defense" className="relative py-32 px-4 sm:px-8 lg:px-14">
           <div className="max-w-7xl mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-20">
               <div className="inline-flex items-center gap-2 text-xs text-[#85868B] font-mono tracking-widest mb-4">
-                <span>04. CORE ARCHITECTURE</span>
+                <span>04 // THREAT MODELING &amp; DEFENSE MATRIX</span>
                 <span aria-hidden="true">/</span>
-                <span>SOVEREIGN CLUSTER PILLARS</span>
+                <span>CRYPTOGRAPHIC HARDENING</span>
               </div>
               <h2 className="font-['Cinzel',serif] text-3xl sm:text-5xl lg:text-6xl text-[#F2F0EB] tracking-tight mb-5">
-                Engineered for <span className="silver-gradient-text">Sovereign Scale</span>
+                Engineered Against <span className="silver-gradient-text">Real-World Vault Failures</span>
               </h2>
               <p className="text-[#A7A7AD] text-base sm:text-lg font-light">
-                Four foundational pillars designed to sustain mission-critical intelligence across global teams.
+                How AVARAN neutralizes the five fatal vulnerabilities found in legacy encrypted clouds and local AI tools.
               </p>
             </div>
 
-            {/* Four Modular Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
-              {/* Feature 1 */}
-              <div
-                onMouseMove={handleCardMouseMove}
-                onMouseLeave={handleCardMouseLeave}
-                className="silver-card rounded-3xl p-8 sm:p-10 group"
-              >
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-14 h-14 rounded-2xl border border-[#C5C6CB]/25 bg-[#050505]/90 flex items-center justify-center text-[#F2F0EB] group-hover:border-[#F2F0EB] group-hover:scale-105 transition-all">
-                    <BarChart2 className="w-6 h-6 stroke-[1.5]" />
-                  </div>
-                  <span className="text-[11px] font-mono tracking-widest text-[#85868B]">01 // ANALYTICS</span>
-                </div>
-                <h3 className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB] mb-4">
-                  Powerful Predictive Analytics
-                </h3>
-                <p className="text-[#A7A7AD] font-light leading-relaxed mb-8">
-                  Real-time multi-dimensional telemetry distills petabytes of operational noise into crystalline
-                  predictive trajectories and sub-second anomaly isolation.
-                </p>
-                <div className="p-4 rounded-2xl bg-[#050505]/70 border border-[#C5C6CB]/10 flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] font-mono text-[#85868B] uppercase">PREDICTIVE CONFIDENCE</div>
-                    <div className="font-['Cinzel',serif] text-lg text-[#F2F0EB] mt-0.5 tabular-nums">99.42%</div>
-                  </div>
-                  <svg className="w-36 h-10 overflow-visible" viewBox="0 0 140 36">
-                    <path d="M0 30 Q 25 26, 40 16 T 85 18 T 140 4" fill="none" stroke="#F2F0EB" strokeWidth="1.5" />
-                    <circle cx="140" cy="4" r="3" fill="#F2F0EB" />
-                  </svg>
-                </div>
-              </div>
+            {/* Defense Tab Navigation */}
+            <div className="flex items-center justify-center gap-2 mb-12 flex-wrap">
+              {[
+                { id: 1, label: '01. Key Wrapping (MEGA Flaw)' },
+                { id: 2, label: '02. Chunk Reordering Attacks' },
+                { id: 3, label: '03. VFS Metadata Leakage' },
+                { id: 4, label: '04. V8 Heap & Localhost AI Trap' },
+                { id: 5, label: '05. Blind Vector Search Proof' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveDefenseTab(tab.id);
+                    playUiChime(620);
+                  }}
+                  onMouseEnter={() => setCursorExpanded(true)}
+                  onMouseLeave={() => setCursorExpanded(false)}
+                  className={`px-4 py-2 rounded-full text-xs font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                    activeDefenseTab === tab.id
+                      ? 'bg-[#F2F0EB] text-[#050505] font-semibold shadow-[0_0_20px_rgba(242,240,235,0.3)]'
+                      : 'border border-[#C5C6CB]/20 bg-[#111214]/60 text-[#A7A7AD] hover:text-[#F2F0EB]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-              {/* Feature 2 */}
-              <div
-                onMouseMove={handleCardMouseMove}
-                onMouseLeave={handleCardMouseLeave}
-                className="silver-card rounded-3xl p-8 sm:p-10 group"
-              >
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-14 h-14 rounded-2xl border border-[#C5C6CB]/25 bg-[#050505]/90 flex items-center justify-center text-[#F2F0EB] group-hover:border-[#F2F0EB] group-hover:scale-105 transition-all">
-                    <GitMerge className="w-6 h-6 stroke-[1.5]" />
+            {/* Active Threat Card Display */}
+            <div className="max-w-4xl mx-auto p-8 sm:p-12 rounded-3xl glass-panel border border-[#C5C6CB]/25 shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
+              {activeDefenseTab === 1 && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <ShieldAlert className="w-4 h-4" /> THREAT: UNAUTHENTICATED KEY WRAPPING
+                    </span>
+                    <span className="text-xs font-mono text-[#85868B]">REFERENCE: THE MEGA EXPLOIT</span>
                   </div>
-                  <span className="text-[11px] font-mono tracking-widest text-[#85868B]">02 // INTEGRATION</span>
-                </div>
-                <h3 className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB] mb-4">
-                  Seamless Orbital Adapters
-                </h3>
-                <p className="text-[#A7A7AD] font-light leading-relaxed mb-8">
-                  Universal orbital adapters connect effortlessly with your existing cloud clusters, data warehouses,
-                  and proprietary neural pipelines in minutes with zero disruption.
-                </p>
-                <div className="p-4 rounded-2xl bg-[#050505]/70 border border-[#C5C6CB]/10 flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] font-mono text-[#85868B] uppercase">ACTIVE PROTOCOLS</div>
-                    <div className="font-['Cinzel',serif] text-lg text-[#F2F0EB] mt-0.5">gRPC · GraphQL · REST</div>
+                  <h3 className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB]">
+                    Defeating Unauthenticated Key Wrapping
+                  </h3>
+                  <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/20 text-xs sm:text-sm text-[#A7A7AD] leading-relaxed">
+                    <strong className="text-rose-300">The Fatal Vulnerability:</strong> Encrypting master keys without
+                    AEAD allows a compromised or malicious server to tamper with ciphertext bits and trick the client into
+                    acting as a decryption oracle, eventually recovering the user&apos;s Master Key in full.
                   </div>
-                  <span className="text-xs font-mono text-[#C5C6CB]">ZERO-CONFIG</span>
+                  <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-xs sm:text-sm text-[#A7A7AD] leading-relaxed">
+                    <strong className="text-emerald-300">The AVARAN Defense:</strong> Memory-hard Argon2id key derivation in
+                    Wasm followed by HKDF-SHA256 into isolated Key_Auth and Key_KEK. Authentication utilizes Ed25519
+                    challenge-response on one-time server nonces and strict authenticated key wrapping—rendering oracle
+                    manipulation mathematically impossible.
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono pt-4 border-t border-[#C5C6CB]/15">
+                    <div>DERIVATION: <span className="text-[#F2F0EB]">Argon2id (m=64MB, t=3, p=4)</span></div>
+                    <div>SEPARATION: <span className="text-[#C5C6CB]">HKDF-SHA256 (Key_Auth || Key_KEK)</span></div>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Feature 3 */}
-              <div
-                onMouseMove={handleCardMouseMove}
-                onMouseLeave={handleCardMouseLeave}
-                className="silver-card rounded-3xl p-8 sm:p-10 group"
-              >
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-14 h-14 rounded-2xl border border-[#C5C6CB]/25 bg-[#050505]/90 flex items-center justify-center text-[#F2F0EB] group-hover:border-[#F2F0EB] group-hover:scale-105 transition-all">
-                    <ShieldCheck className="w-6 h-6 stroke-[1.5]" />
+              {activeDefenseTab === 2 && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <ShieldAlert className="w-4 h-4" /> THREAT: CHUNK REORDERING &amp; TRUNCATION
+                    </span>
+                    <span className="text-xs font-mono text-[#85868B]">REFERENCE: STREAM CIPHER SLICING</span>
                   </div>
-                  <span className="text-[11px] font-mono tracking-widest text-[#85868B]">03 // SECURITY</span>
-                </div>
-                <h3 className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB] mb-4">
-                  Advanced Post-Quantum Security
-                </h3>
-                <p className="text-[#A7A7AD] font-light leading-relaxed mb-8">
-                  Post-quantum lattice encryption, zero-knowledge cryptographic proofs, and hardware-enforced enclaves
-                  safeguard every orbital transaction and vector query.
-                </p>
-                <div className="p-4 rounded-2xl bg-[#050505]/70 border border-[#C5C6CB]/10 flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] font-mono text-[#85868B] uppercase">ENCRYPTION STANDARD</div>
-                    <div className="font-['Cinzel',serif] text-lg text-[#F2F0EB] mt-0.5">KYBER-1024 // ZK-SNARK</div>
+                  <h3 className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB]">
+                    Preventing Chunk Reordering &amp; Truncation Attacks
+                  </h3>
+                  <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/20 text-xs sm:text-sm text-[#A7A7AD] leading-relaxed">
+                    <strong className="text-rose-300">The Fatal Vulnerability:</strong> Slicing large files into encrypted
+                    chunks without sequential nonces or end-of-stream tags allows an adversary on the server to silently drop
+                    the final chunk or swap blocks between different files undetected.
                   </div>
-                  <span className="text-xs font-mono text-[#C5C6CB]">VERIFIED</span>
+                  <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-xs sm:text-sm text-[#A7A7AD] leading-relaxed">
+                    <strong className="text-emerald-300">The AVARAN Defense:</strong> STREAM AEAD encryption enforcing strict
+                    counter nonces and Associated Authenticated Data (AAD) cryptographically binding{' '}
+                    <code className="text-[#F2F0EB] font-mono">file_id</code>,{' '}
+                    <code className="text-[#F2F0EB] font-mono">chunk_index</code>, and{' '}
+                    <code className="text-[#F2F0EB] font-mono">is_last_chunk</code> flag. Any missing, duplicated, or rearranged
+                    block causes immediate cryptographic signature failure.
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono pt-4 border-t border-[#C5C6CB]/15">
+                    <div>CIPHER: <span className="text-[#F2F0EB]">STREAM AEAD (Poly1305 Auth Tag)</span></div>
+                    <div>AAD BINDING: <span className="text-[#C5C6CB]">file_id + chunk_index + is_last</span></div>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Feature 4 */}
-              <div
-                onMouseMove={handleCardMouseMove}
-                onMouseLeave={handleCardMouseLeave}
-                className="silver-card rounded-3xl p-8 sm:p-10 group"
-              >
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-14 h-14 rounded-2xl border border-[#C5C6CB]/25 bg-[#050505]/90 flex items-center justify-center text-[#F2F0EB] group-hover:border-[#F2F0EB] group-hover:scale-105 transition-all">
-                    <Users className="w-6 h-6 stroke-[1.5]" />
+              {activeDefenseTab === 3 && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <ShieldAlert className="w-4 h-4" /> THREAT: VFS METADATA &amp; SIZE LEAKAGE
+                    </span>
+                    <span className="text-xs font-mono text-[#85868B]">REFERENCE: THE CRYPTOMATOR FLAW</span>
                   </div>
-                  <span className="text-[11px] font-mono tracking-widest text-[#85868B]">04 // COLLABORATION</span>
-                </div>
-                <h3 className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB] mb-4">
-                  Synchronized Multiplayer Topology
-                </h3>
-                <p className="text-[#A7A7AD] font-light leading-relaxed mb-8">
-                  Multiplayer spatial workspaces, granular role-based governance, and real-time version histories
-                  empower distributed architects to build in unison.
-                </p>
-                <div className="p-4 rounded-2xl bg-[#050505]/70 border border-[#C5C6CB]/10 flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] font-mono text-[#85868B] uppercase">CONCURRENT ARCHITECTS</div>
-                    <div className="font-['Cinzel',serif] text-lg text-[#F2F0EB] mt-0.5">UNLIMITED NODES</div>
+                  <h3 className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB]">
+                    Eliminating VFS Metadata &amp; Size Leakage
+                  </h3>
+                  <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/20 text-xs sm:text-sm text-[#A7A7AD] leading-relaxed">
+                    <strong className="text-rose-300">The Fatal Vulnerability:</strong> Encrypting filenames alone fails
+                    when a 14.2 MB file uploads as a 14.2 MB blob. An adversary analyzing chunk sizes, directory depths,
+                    and modification timestamps can correlate files with known document templates or media releases.
                   </div>
-                  <span className="text-xs font-mono text-[#C5C6CB]">REAL-TIME SYNC</span>
+                  <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-xs sm:text-sm text-[#A7A7AD] leading-relaxed">
+                    <strong className="text-emerald-300">The AVARAN Defense:</strong> Complete decoupling of the VFS index
+                    from storage plus PADMÉ padding into uniform 4 MB blocks (capped at ≤12% overhead). An adversary on the
+                    cloud pipe sees only uniform 4 MB chunks with random UUIDs—making 100 small PDFs completely indistinguishable
+                    from a single video stream.
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono pt-4 border-t border-[#C5C6CB]/15">
+                    <div>CHUNKING: <span className="text-[#F2F0EB]">4 MB Fixed ArrayBuffers</span></div>
+                    <div>OVERHEAD CAP: <span className="text-[#C5C6CB]">PADMÉ Algorithm (≤ 12%)</span></div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {activeDefenseTab === 4 && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <ShieldAlert className="w-4 h-4" /> THREAT: V8 HEAP LINGERING &amp; LOCALHOST AI TRAP
+                    </span>
+                    <span className="text-xs font-mono text-[#85868B]">REFERENCE: OLLAMA / LOCALHOST TRAP</span>
+                  </div>
+                  <h3 className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB]">
+                    Eradicating V8 Heap Key Lingering &amp; Localhost AI Traps
+                  </h3>
+                  <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/20 text-xs sm:text-sm text-[#A7A7AD] leading-relaxed">
+                    <strong className="text-rose-300">The Fatal Vulnerability:</strong> Standard JavaScript Web Crypto
+                    leaves plaintext buffers and keys lingering indefinitely in the V8 garbage-collected heap. Meanwhile,
+                    local AI tools that route files through <code className="text-rose-200">localhost:11434</code> (with{' '}
+                    <code className="text-rose-200">OLLAMA_ORIGINS=*</code>) destroy the browser sandbox, exposing decrypted
+                    data to cross-tab stealing attacks.
+                  </div>
+                  <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-xs sm:text-sm text-[#A7A7AD] leading-relaxed">
+                    <strong className="text-emerald-300">The AVARAN Defense:</strong> All cryptographic operations and vector
+                    cosine math run strictly inside C/Wasm linear memory and are wiped immediately via{' '}
+                    <code className="text-[#F2F0EB] font-mono">explicit_bzero</code>. All AI inference runs strictly inside
+                    isolated browser Web Workers via WebGPU/ONNX—never binding to insecure localhost network ports.
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono pt-4 border-t border-[#C5C6CB]/15">
+                    <div>MEMORY ZEROING: <span className="text-[#F2F0EB]">explicit_bzero in Wasm</span></div>
+                    <div>AI ISOLATION: <span className="text-[#C5C6CB]">In-Worker WebGPU (No Localhost Ports)</span></div>
+                  </div>
+                </div>
+              )}
+
+              {activeDefenseTab === 5 && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4" /> MATHEMATICAL PROOF: 0.00% SERVER VISIBILITY
+                    </span>
+                    <span className="text-xs font-mono text-[#85868B]">REFERENCE: BLIND COSINE SIMILARITY</span>
+                  </div>
+                  <h3 className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB]">
+                    Blind In-Browser Cosine Similarity
+                  </h3>
+                  <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-xs sm:text-sm text-[#A7A7AD] leading-relaxed">
+                    <strong className="text-emerald-300">Cryptographic Invariant:</strong> Cloud vector databases
+                    (Pinecone, pgvector) require cleartext or homomorphic embeddings that leak query intent. In AVARAN Zero-Vault,
+                    the entire 384-dimensional vector database resides within the client&apos;s encrypted monolithic VFS. Search
+                    queries are embedded locally via WebGPU and evaluated in C/Wasm memory in &lt; 5 ms. Zero search vectors
+                    or search tokens ever touch the network pipe.
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono pt-4 border-t border-[#C5C6CB]/15">
+                    <div>VECTOR DIMENSION: <span className="text-[#F2F0EB]">384-Dim Dense Embeddings</span></div>
+                    <div>QUERY TRANSMISSION: <span className="text-emerald-400 font-semibold">0 Bytes Transmitted</span></div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
 
         {/* ========================================== */}
-        {/* 8. CONTACT & ACCESS SECTION (Section 05)    */}
+        {/* 8. SECTION 5: FINAL CTA & PROVISIONING     */}
         {/* ========================================== */}
         <section
-          id="contact"
+          id="vault"
           className="relative min-h-[90vh] w-full flex items-center justify-center py-32 px-4 sm:px-8 lg:px-14 overflow-hidden"
         >
-          {/* Subtle Ambient Ring Background */}
+          {/* Subtle Ambient Orbital Aura */}
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-30">
             <svg className="w-[600px] h-[600px] max-w-none" viewBox="0 0 600 600">
               <circle cx="300" cy="300" r="240" fill="none" stroke="rgba(242,240,235,0.28)" strokeWidth="0.9" />
@@ -1830,158 +2030,46 @@ export default function App() {
           </div>
 
           <div className="max-w-4xl mx-auto text-center relative z-10 w-full">
-            {/* Emblem */}
             <div className="w-20 h-20 mx-auto mb-8 rounded-full border border-[#C5C6CB]/30 bg-[#050505]/90 flex items-center justify-center shadow-[0_0_50px_rgba(242,240,235,0.2)]">
               <img src={AVARAN_LOGO} alt="AVARAN Emblem" className="w-16 h-16 object-contain logo-blend" />
             </div>
 
             <div className="text-[11px] font-mono tracking-[0.38em] uppercase text-[#C5C6CB] mb-5">
-              INITIATE CONVERGENCE
+              05 // ZERO-TRUST DEPLOYMENT
             </div>
 
             <h2 className="font-['Cinzel',serif] text-4xl sm:text-6xl lg:text-7xl text-[#F2F0EB] tracking-tight leading-[1.1] mb-6">
-              The Future Is Yours <br className="hidden sm:inline" />
-              <span className="silver-gradient-text">to Create.</span>
+              Your Data. <br className="hidden sm:inline" />
+              <span className="silver-gradient-text">Mathematically Invisible.</span>
             </h2>
 
-            <p className="text-[#A7A7AD] text-base sm:text-xl font-light max-w-2xl mx-auto mb-12">
-              Step inside the AVARAN dimension. Provision your first autonomous orbital cluster or schedule a private
-              architectural briefing with our engineering leadership.
+            <p className="text-[#A7A7AD] text-base sm:text-xl font-light max-w-2xl mx-auto mb-10">
+              Stop choosing between cloud intelligence and cryptographic sovereignty. Initialize an isolated AVARAN
+              Zero-Vault cluster with client-side WebGPU search and Wasm AEAD protection.
             </p>
 
-            {/* Interactive Provisioning Form Container */}
-            <div className="max-w-2xl mx-auto p-8 sm:p-10 rounded-3xl glass-panel border border-[#C5C6CB]/25 text-left mb-10 shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
-              {!contactSuccess ? (
-                <form onSubmit={handleContactSubmit} className="space-y-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-[10px] font-mono tracking-widest uppercase text-[#85868B] mb-2">
-                        ARCHITECT / INSTITUTION
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={contactForm.name}
-                        onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                        placeholder="Dr. Julian Cross"
-                        className="w-full px-4 py-3 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/20 text-sm text-[#F2F0EB] placeholder-[#85868B]/50 focus:outline-none focus:border-[#F2F0EB] transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-mono tracking-widest uppercase text-[#85868B] mb-2">
-                        TRANSMISSION ENDPOINT
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={contactForm.email}
-                        onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                        placeholder="julian@orbital-synthesis.org"
-                        className="w-full px-4 py-3 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/20 text-sm text-[#F2F0EB] placeholder-[#85868B]/50 focus:outline-none focus:border-[#F2F0EB] transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-[10px] font-mono tracking-widest uppercase text-[#85868B] mb-2">
-                        DESIRED INFRASTRUCTURE TIER
-                      </label>
-                      <select
-                        value={contactForm.tier}
-                        onChange={(e) => setContactForm({ ...contactForm, tier: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/20 text-sm text-[#F2F0EB] focus:outline-none focus:border-[#F2F0EB] transition-colors"
-                      >
-                        <option value="Cognitive Orbital Synthesis">Cognitive Orbital Synthesis (1.4 PB/s)</option>
-                        <option value="Astrolabe Spatial Telemetry">Astrolabe Spatial Telemetry (Sub-mm Grid)</option>
-                        <option value="Kinetic Continuum Engine">Kinetic Continuum Engine (Fluid Mesh)</option>
-                        <option value="Full Sovereign Enterprise Fabric">Full Sovereign Enterprise Fabric</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-mono tracking-widest uppercase text-[#85868B] mb-2">
-                        REGIONAL ANCHOR
-                      </label>
-                      <select
-                        value={contactForm.region}
-                        onChange={(e) => setContactForm({ ...contactForm, region: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/20 text-sm text-[#F2F0EB] focus:outline-none focus:border-[#F2F0EB] transition-colors"
-                      >
-                        <option value="Orbital Low-Earth (LEO-Mesh)">Orbital Low-Earth (LEO-Mesh)</option>
-                        <option value="Lunar Gateway Sovereign Zone">Lunar Gateway Sovereign Zone</option>
-                        <option value="Terrestrial European Cluster">Terrestrial European Cluster</option>
-                        <option value="North America Sovereign Backbone">North America Sovereign Backbone</option>
-                        <option value="Asia-Pacific Quantum Mesh">Asia-Pacific Quantum Mesh</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-mono tracking-widest uppercase text-[#85868B] mb-2">
-                      SPECIFICATION NOTES (OPTIONAL)
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={contactForm.notes}
-                      onChange={(e) => setContactForm({ ...contactForm, notes: e.target.value })}
-                      placeholder="Outline targeted vector bandwidth, model scale, or enclave constraints..."
-                      className="w-full px-4 py-3 rounded-xl bg-[#050505]/80 border border-[#C5C6CB]/20 text-sm text-[#F2F0EB] placeholder-[#85868B]/50 focus:outline-none focus:border-[#F2F0EB] transition-colors resize-none"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={contactSubmitting}
-                    onMouseEnter={() => setCursorExpanded(true)}
-                    onMouseLeave={() => setCursorExpanded(false)}
-                    className="w-full py-4 rounded-full bg-gradient-to-r from-[#F2F0EB] via-[#C5C6CB] to-[#F2F0EB] text-[#050505] font-semibold text-xs tracking-[0.24em] uppercase shadow-[0_0_40px_rgba(242,240,235,0.3)] hover:shadow-[0_0_60px_rgba(242,240,235,0.6)] transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    {contactSubmitting ? (
-                      <span>LOCKING ORBITAL COORDINATES...</span>
-                    ) : (
-                      <>
-                        <span>Provision Sovereign Cluster</span>
-                        <Sparkles className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </form>
-              ) : (
-                <div className="py-8 text-center space-y-4">
-                  <div className="w-14 h-14 rounded-full bg-[#C5C6CB]/15 border border-[#F2F0EB] mx-auto flex items-center justify-center text-[#F2F0EB]">
-                    <Check className="w-7 h-7" />
-                  </div>
-                  <h3 className="font-['Cinzel',serif] text-2xl text-[#F2F0EB]">Orbital Handshake Confirmed</h3>
-                  <p className="text-sm text-[#A7A7AD] max-w-md mx-auto">
-                    Node cluster provisioned for <strong className="text-[#F2F0EB]">{contactForm.name}</strong>.
-                    Credentials dispatched to <span className="font-mono text-[#C5C6CB]">{contactForm.email}</span>.
-                  </p>
-                  <div className="pt-4 border-t border-[#C5C6CB]/15 font-mono text-xs text-[#85868B] space-y-1">
-                    <div>CLUSTER ID: <span className="text-[#F2F0EB]">AVR-NODE-{(Math.random() * 8999 + 1000).toFixed(0)}</span></div>
-                    <div>TOPOLOGY: <span className="text-[#F2F0EB]">{contactForm.tier}</span></div>
-                    <div>REGION: <span className="text-[#F2F0EB]">{contactForm.region}</span></div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setContactSuccess(false)}
-                    className="mt-4 px-6 py-2 rounded-full border border-[#C5C6CB]/30 text-xs font-mono uppercase text-[#A7A7AD] hover:text-[#F2F0EB] hover:border-[#F2F0EB] transition-colors"
-                  >
-                    Submit Another Provisioning Request
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-center">
+            {/* Test Bench & Provisioning Trigger */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 type="button"
                 onClick={() => openModalWithSpec('default')}
                 onMouseEnter={() => setCursorExpanded(true)}
                 onMouseLeave={() => setCursorExpanded(false)}
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-full border border-[#C5C6CB]/30 text-xs tracking-[0.2em] uppercase text-[#F2F0EB] hover:bg-[#111214] transition-all cursor-pointer"
+                className="group relative inline-flex items-center gap-4 px-10 py-5 rounded-full bg-gradient-to-r from-[#F2F0EB] via-[#C5C6CB] to-[#F2F0EB] text-[#050505] font-semibold text-xs sm:text-sm tracking-[0.24em] uppercase shadow-[0_0_50px_rgba(242,240,235,0.35)] hover:shadow-[0_0_75px_rgba(242,240,235,0.65)] transition-all cursor-pointer"
               >
-                <span>Open Quick Access Portal</span>
-                <ExternalLink className="w-4 h-4 text-[#C5C6CB]" />
+                <span>Initialize Zero-Vault</span>
+                <Sparkles className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openModalWithSpec('webgpu-onnx')}
+                onMouseEnter={() => setCursorExpanded(true)}
+                onMouseLeave={() => setCursorExpanded(false)}
+                className="inline-flex items-center gap-3 px-8 py-5 rounded-full border border-[#C5C6CB]/30 bg-[#111214]/60 text-xs tracking-[0.2em] uppercase text-[#F2F0EB] hover:bg-[#242528] transition-all cursor-pointer"
+              >
+                <Terminal className="w-4 h-4 text-[#C5C6CB]" />
+                <span>Launch Client DLP &amp; Search Test Bench</span>
               </button>
             </div>
           </div>
@@ -1993,14 +2081,14 @@ export default function App() {
       {/* ========================================== */}
       <footer className="relative z-10 border-t border-[#242528] bg-[#050505]/90 backdrop-blur-xl py-12 px-4 sm:px-8 lg:px-14">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          {/* Brand Info */}
           <div className="flex items-center gap-3">
             <img src={AVARAN_LOGO} alt="AVARAN" className="w-8 h-8 object-contain logo-blend" />
-            <span className="font-['Cinzel',serif] text-sm tracking-[0.28em] text-[#F2F0EB]">AVARAN</span>
-            <span className="text-xs text-[#85868B] font-mono ml-2">© 2026 ORBITAL SYSTEMS INC.</span>
+            <span className="font-['Cinzel',serif] text-sm tracking-[0.28em] text-[#F2F0EB]">
+              AVARAN // ZERO-VAULT
+            </span>
+            <span className="text-xs text-[#85868B] font-mono ml-2">© 2026 SOVEREIGN CRYPTO SYSTEMS</span>
           </div>
 
-          {/* Navigation Links */}
           <div className="flex items-center gap-6 text-xs tracking-widest uppercase text-[#85868B]">
             <a
               href="#home"
@@ -2013,79 +2101,68 @@ export default function App() {
               Top
             </a>
             <a
-              href="#about"
+              href="#deadlock"
               onClick={(e) => {
                 e.preventDefault();
-                scrollTo('about');
+                scrollTo('deadlock');
               }}
               className="hover:text-[#F2F0EB] transition-colors"
             >
-              Philosophy
+              Deadlock
             </a>
             <a
-              href="#explore"
+              href="#pipeline"
               onClick={(e) => {
                 e.preventDefault();
-                scrollTo('explore');
+                scrollTo('pipeline');
               }}
               className="hover:text-[#F2F0EB] transition-colors"
             >
-              Explore
+              Pipeline
             </a>
             <a
-              href="#experience"
+              href="#defense"
               onClick={(e) => {
                 e.preventDefault();
-                scrollTo('experience');
+                scrollTo('defense');
               }}
               className="hover:text-[#F2F0EB] transition-colors"
             >
-              Lab
+              Defense
             </a>
             <a
-              href="#features"
+              href="#architecture"
               onClick={(e) => {
                 e.preventDefault();
-                scrollTo('features');
+                scrollTo('architecture');
               }}
               className="hover:text-[#F2F0EB] transition-colors"
             >
-              Capabilities
-            </a>
-            <a
-              href="#contact"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollTo('contact');
-              }}
-              className="hover:text-[#F2F0EB] transition-colors"
-            >
-              Provision
+              Architecture
             </a>
           </div>
 
-          {/* Live System Status Indicator */}
           <div className="flex items-center gap-2 text-[10px] font-mono text-[#85868B]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#C5C6CB] animate-ping" />
-            <span>14,280 NODES ONLINE · 0.04ms LATENCY</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span>0.00% SERVER VISIBILITY · PADMÉ 4MB BLIND PIPE</span>
           </div>
         </div>
       </footer>
 
       {/* ========================================== */}
-      {/* 10. INTERACTIVE DETAIL & PROVISIONING MODAL */}
+      {/* 10. INTERACTIVE TEST BENCH & MODAL         */}
       {/* ========================================== */}
       {modalOpen && (
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
-          className="fixed inset-0 z-[95] flex items-center justify-center p-4 sm:p-6 bg-[#050505]/85 backdrop-blur-2xl transition-opacity duration-300"
+          className="fixed inset-0 z-[95] flex items-center justify-center p-4 sm:p-6 bg-[#050505]/85 backdrop-blur-2xl transition-opacity duration-300 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) setModalOpen(false);
           }}
         >
-          <div className="relative w-full max-w-xl rounded-3xl glass-panel border border-[#C5C6CB]/30 p-7 sm:p-10 shadow-[0_25px_80px_rgba(0,0,0,0.95)]">
+          <div className="relative w-full max-w-2xl rounded-3xl glass-panel border border-[#C5C6CB]/30 p-7 sm:p-10 shadow-[0_25px_80px_rgba(0,0,0,0.95)] my-8">
             <button
               type="button"
               onClick={() => setModalOpen(false)}
@@ -2102,7 +2179,7 @@ export default function App() {
               </span>
             </div>
 
-            <h3 id="modal-title" className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB] mb-3">
+            <h3 id="modal-title" className="font-['Cinzel',serif] text-2xl sm:text-3xl text-[#F2F0EB] mb-2">
               {selectedModalSpec.title}
             </h3>
 
@@ -2110,20 +2187,93 @@ export default function App() {
               {selectedModalSpec.desc}
             </p>
 
-            {/* Spec Highlights */}
-            {selectedModalSpec.throughput && (
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-[#050505]/60 border border-[#C5C6CB]/15 mb-6 text-xs font-mono">
+            {/* LIVE CLIENT-SIDE PRE-ENCRYPTION DLP & SEARCH TEST BENCH */}
+            <div className="p-5 rounded-2xl bg-[#050505]/80 border border-[#C5C6CB]/20 mb-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase text-[#F2F0EB] flex items-center gap-2">
+                  <Terminal className="w-3.5 h-3.5 text-[#C5C6CB]" />
+                  Live Client DLP &amp; Vector Test Bench
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400">IN-WORKER SIMULATION</span>
+              </div>
+
+              {/* Sample Presets */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-mono text-[#85868B]">PRESETS:</span>
+                <button
+                  type="button"
+                  onClick={() => setDemoInput('Tax invoice and Q1 financial audit from March 2026')}
+                  className="px-2.5 py-1 rounded bg-[#111214] text-[10px] font-mono text-[#A7A7AD] hover:text-[#F2F0EB] border border-[#242528]"
+                >
+                  Clear Invoice
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDemoInput('export AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"')}
+                  className="px-2.5 py-1 rounded bg-[#111214] text-[10px] font-mono text-[#A7A7AD] hover:text-[#F2F0EB] border border-[#242528]"
+                >
+                  AWS API Secret
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDemoInput('-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQ...')}
+                  className="px-2.5 py-1 rounded bg-[#111214] text-[10px] font-mono text-[#A7A7AD] hover:text-[#F2F0EB] border border-[#242528]"
+                >
+                  SSH Key
+                </button>
+              </div>
+
+              {/* Live Input Field */}
+              <div>
+                <label className="block text-[10px] font-mono text-[#85868B] uppercase mb-1">
+                  BUFFER CONTENT TO TEST (PRE-ENCRYPTION PASS):
+                </label>
+                <textarea
+                  rows={2}
+                  value={demoInput}
+                  onChange={(e) => setDemoInput(e.target.value)}
+                  placeholder="Enter sample file contents or search query..."
+                  className="w-full px-3 py-2 rounded-xl bg-[#111214] border border-[#C5C6CB]/20 text-xs font-mono text-[#F2F0EB] placeholder-[#85868B]/40 focus:outline-none focus:border-[#F2F0EB] transition-colors resize-none"
+                />
+              </div>
+
+              {/* Live DLP and Vector Indicators */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px] font-mono pt-2 border-t border-[#242528]">
                 <div>
-                  <span className="text-[#85868B] block mb-1">ALLOCATED BANDWIDTH</span>
-                  <span className="text-[#F2F0EB] font-semibold">{selectedModalSpec.throughput}</span>
+                  <span className="text-[#85868B] block text-[9px]">SHANNON ENTROPY</span>
+                  <span className={`font-semibold tabular-nums ${demoEntropy > 4.85 ? 'text-amber-400' : 'text-[#F2F0EB]'}`}>
+                    {demoEntropy} bits/B
+                  </span>
                 </div>
                 <div>
-                  <span className="text-[#85868B] block mb-1">MEASURED P99 LATENCY</span>
-                  <span className="text-[#F2F0EB] font-semibold">{selectedModalSpec.latency}</span>
+                  <span className="text-[#85868B] block text-[9px]">VECTOR SEARCH</span>
+                  <span className="text-[#F2F0EB] font-semibold tabular-nums">&lt; 3.8 ms</span>
+                </div>
+                <div>
+                  <span className="text-[#85868B] block text-[9px]">COSINE MATCH</span>
+                  <span className="text-emerald-400 font-semibold tabular-nums">{demoCosineSim}</span>
+                </div>
+                <div>
+                  <span className="text-[#85868B] block text-[9px]">PADMÉ SLICES</span>
+                  <span className="text-[#C5C6CB] font-semibold">{demoChunkCount} x 4MB</span>
                 </div>
               </div>
-            )}
 
+              {/* Security Alert if Secret Detected */}
+              {demoSecretDetected && (
+                <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-center justify-between text-xs font-mono">
+                  <div className="flex items-center gap-2 text-amber-300">
+                    <Fingerprint className="w-4 h-4 text-amber-400" />
+                    <span>DLP DETECTED: {demoSecretDetected}</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-200">
+                    WebAuthn Lock Active
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Form */}
             {!modalSuccess ? (
               <form onSubmit={handleModalSubmit} className="space-y-4">
                 <div>
@@ -2131,7 +2281,7 @@ export default function App() {
                     htmlFor="architect-name"
                     className="block text-[10px] font-mono tracking-widest uppercase text-[#85868B] mb-1.5"
                   >
-                    ARCHITECT IDENTIFIER
+                    VAULT OWNER IDENTIFIER
                   </label>
                   <input
                     id="architect-name"
@@ -2139,7 +2289,7 @@ export default function App() {
                     required
                     value={architectName}
                     onChange={(e) => setArchitectName(e.target.value)}
-                    placeholder="Dr. Elena Vance"
+                    placeholder="Dr. Julian Vance // Sovereign Lab"
                     className="w-full px-4 py-3 rounded-xl bg-[#050505]/90 border border-[#C5C6CB]/20 text-sm text-[#F2F0EB] placeholder-[#85868B]/50 focus:outline-none focus:border-[#F2F0EB] transition-colors"
                   />
                 </div>
@@ -2149,7 +2299,7 @@ export default function App() {
                     htmlFor="architect-email"
                     className="block text-[10px] font-mono tracking-widest uppercase text-[#85868B] mb-1.5"
                   >
-                    TRANSMISSION ENDPOINT (EMAIL)
+                    TRANSMISSION ENDPOINT (EMAIL FOR PASSKEY ENROLLMENT)
                   </label>
                   <input
                     id="architect-email"
@@ -2157,7 +2307,7 @@ export default function App() {
                     required
                     value={architectEmail}
                     onChange={(e) => setArchitectEmail(e.target.value)}
-                    placeholder="vance@orbital-institute.org"
+                    placeholder="julian@zero-vault.org"
                     className="w-full px-4 py-3 rounded-xl bg-[#050505]/90 border border-[#C5C6CB]/20 text-sm text-[#F2F0EB] placeholder-[#85868B]/50 focus:outline-none focus:border-[#F2F0EB] transition-colors"
                   />
                 </div>
@@ -2167,7 +2317,7 @@ export default function App() {
                     htmlFor="architect-tier"
                     className="block text-[10px] font-mono tracking-widest uppercase text-[#85868B] mb-1.5"
                   >
-                    COMPUTATIONAL TOPOLOGY
+                    ZERO-VAULT DEPLOYMENT PROFILE
                   </label>
                   <select
                     id="architect-tier"
@@ -2175,18 +2325,18 @@ export default function App() {
                     onChange={(e) => setSelectedTier(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-[#050505]/90 border border-[#C5C6CB]/20 text-sm text-[#F2F0EB] focus:outline-none focus:border-[#F2F0EB] transition-colors"
                   >
-                    <option value="Cognitive Orbital Synthesis">Cognitive Orbital Synthesis (1.4 PB/s)</option>
-                    <option value="Astrolabe Spatial Telemetry">Astrolabe Spatial Telemetry (Sub-mm Grid)</option>
-                    <option value="Kinetic Continuum Engine">Kinetic Continuum Engine (Fluid Mesh)</option>
-                    <option value="Full Sovereign Enterprise Cluster">Full Sovereign Enterprise Cluster</option>
+                    <option value="C/Wasm STREAM AEAD Enclave">C/Wasm STREAM AEAD Enclave (4 MB PADMÉ)</option>
+                    <option value="Monolithic PADMÉ Storage Fabric">Monolithic PADMÉ Storage Fabric (Zero Metadata)</option>
+                    <option value="Client WebGPU Vector Enclave">Client WebGPU Vector Enclave (384-Dim &lt;5ms)</option>
+                    <option value="Sovereign Zero-Vault Cluster">Sovereign Zero-Vault Cluster (Full Enterprise)</option>
                   </select>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full mt-2 py-4 rounded-full bg-[#F2F0EB] text-[#050505] font-medium text-xs tracking-[0.22em] uppercase hover:bg-[#C5C6CB] transition-colors cursor-pointer"
+                  className="w-full mt-2 py-4 rounded-full bg-[#F2F0EB] text-[#050505] font-semibold text-xs tracking-[0.22em] uppercase hover:bg-[#C5C6CB] transition-colors cursor-pointer"
                 >
-                  Initialize Orbital Handshake
+                  Initialize Sovereign Zero-Vault Handshake
                 </button>
               </form>
             ) : (
@@ -2194,16 +2344,21 @@ export default function App() {
                 <div className="w-12 h-12 rounded-full bg-[#C5C6CB]/15 border border-[#F2F0EB] mx-auto flex items-center justify-center text-[#F2F0EB]">
                   <Check className="w-6 h-6" />
                 </div>
-                <h4 className="font-['Cinzel',serif] text-xl text-[#F2F0EB]">Orbital Coordinates Locked</h4>
+                <h4 className="font-['Cinzel',serif] text-xl text-[#F2F0EB]">Argon2id + HKDF Key Derivation Sealed</h4>
                 <p className="text-xs text-[#A7A7AD] font-mono tracking-wider">
-                  NODE ASSIGNED FOR {architectName.toUpperCase() || 'ARCHITECT'} // [{selectedTier.toUpperCase()}]
+                  ZERO-VAULT ALLOCATED FOR {architectName.toUpperCase() || 'VAULT ARCHITECT'} // [{selectedTier.toUpperCase()}]
                 </p>
+                <div className="p-3 rounded-xl bg-[#050505] border border-[#C5C6CB]/20 text-[10px] font-mono text-[#85868B] text-left max-w-md mx-auto space-y-1">
+                  <div>KEY_AUTH: <span className="text-[#F2F0EB]">0x4f8e...c21a (Derived via Argon2id)</span></div>
+                  <div>KEY_KEK: <span className="text-[#F2F0EB]">0x9b1d...77fe (Isolated in Wasm)</span></div>
+                  <div>VFS REPOSITORY: <span className="text-emerald-400">Mounted · 0.00% Server Visibility</span></div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
                   className="mt-3 px-6 py-2 rounded-full border border-[#C5C6CB]/30 text-xs font-mono uppercase text-[#A7A7AD] hover:text-[#F2F0EB] hover:border-[#F2F0EB] transition-colors"
                 >
-                  Done
+                  Dismiss Terminal
                 </button>
               </div>
             )}
