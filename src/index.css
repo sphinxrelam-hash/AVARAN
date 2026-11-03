@@ -12,9 +12,36 @@
 
   --font-cinzel: "Cinzel", serif;
   --font-inter: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
   --letter-spacing-ultra: 0.32em;
   --letter-spacing-wideLux: 0.18em;
+}
+
+@keyframes zeroizeFlash {
+  0% { box-shadow: 0 0 0 0 rgba(197, 198, 203, 0.7); }
+  70% { box-shadow: 0 0 0 25px rgba(197, 198, 203, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(197, 198, 203, 0); }
+}
+
+.zeroize-active {
+  animation: zeroizeFlash 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes serverScanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.server-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(197, 198, 203, 0.4), transparent);
+  animation: serverScanline 4s linear infinite;
+  pointer-events: none;
 }
 
 :root {
@@ -45,7 +72,10 @@ html, body {
   color: #F2F0EB;
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Sleek scrollbar */
